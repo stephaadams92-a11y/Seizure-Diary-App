@@ -1,0 +1,42 @@
+{
+  "name": "Seizure Diary App",
+  "short_name": "Seizure Diary",
+  "description": "A simple diary to log seizures, medications, and appointments.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e8f4fd",
+  "theme_color": "#1565c0",
+  "id": "./",
+  "icons": [
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Seizure",
+      "short_name": "Log Seizure",
+      "description": "Quickly log a seizure",
+      "url": "./?action=log",
+      "icons": [
+        {
+          "src": "icon-512.png",
+          "sizes": "512x512"
+        }
+      ]
+    }
+  ],
+  "categories": ["health", "medical", "lifestyle"],
+  "lang": "en-GB"
+}
