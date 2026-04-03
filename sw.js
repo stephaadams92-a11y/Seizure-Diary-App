@@ -3,8 +3,10 @@ const CACHE_NAME = 'seizure-diary-v2'; // Incremented version
 const ASSETS = [
     '/',
     '/index.html',
+    '/style.css',
+    '/app.js',
     '/manifest.json',
-    '/icon-512.png' 
+    '/icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
