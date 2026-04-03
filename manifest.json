@@ -1,13 +1,13 @@
 {
-  "name": "Seizure Diary App",
-  "short_name": "Seizure Diary",
-  "description": "A simple diary to log seizures, medications, and appointments.",
+  "name": "Seizurre – Diary Log App",
+  "short_name": "Seizurre",
+  "description": "A private seizure diary. All data stays on your device.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#e8f4fd",
-  "theme_color": "#1565c0",
+  "background_color": "#1a0030",
+  "theme_color": "#6a1b9a",
   "id": "./",
   "icons": [
     {
@@ -26,15 +26,10 @@
   "shortcuts": [
     {
       "name": "Log Seizure",
-      "short_name": "Log Seizure",
-      "description": "Quickly log a seizure",
+      "short_name": "Log Now",
+      "description": "Quickly log a seizure with the current time",
       "url": "./?action=log",
-      "icons": [
-        {
-          "src": "icon-512.png",
-          "sizes": "512x512"
-        }
-      ]
+      "icons": [{ "src": "icon-512.png", "sizes": "512x512" }]
     }
   ],
   "categories": ["health", "medical", "lifestyle"],
