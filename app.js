@@ -379,6 +379,7 @@ document.getElementById('emergency-close').addEventListener('click', () => close
 
 // ─── LOG SEIZURE ──────────────────────────────────────────────────
 let pendingSeizureId = null;
+let editingExistingSeizure = false; // true when reopening modal to edit, false on fresh log
 
 async function logNow() {
   const now  = new Date();
@@ -386,6 +387,7 @@ async function logNow() {
   const time = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
   const id   = uid();
   pendingSeizureId = id;
+  editingExistingSeizure = false;
   await mutateAndPersist(() => {
     seizures.unshift({ id, date, time, notes:'', duration:null, type:'', triggers:[], aura:'', createdAt: now.getTime() });
   });
@@ -397,10 +399,25 @@ async function logNow() {
     btn.innerHTML = '<span class="log-btn-icon" aria-hidden="true">⚡</span> Log Seizure';
   }, 1200);
   toast('✓ Logged at ' + niceTime(time));
-  buildTriggerChips('sd-trigger-chips');
-  document.getElementById('sd-duration').value = '';
-  document.getElementById('sd-type').value = '';
-  document.getElementById('sd-notes').value = '';
+  openSeizureDetailModal(null);
+}
+
+function openSeizureDetailModal(existingId) {
+  // If existingId given, pre-populate from that seizure (edit mode)
+  // If null, we're filling in the freshly-logged pendingSeizureId
+  const targetId = existingId || pendingSeizureId;
+  const s = existingId ? seizures.find(x => x.id === existingId) : null;
+  if (existingId) {
+    pendingSeizureId = existingId;
+    editingExistingSeizure = true;
+  }
+  document.getElementById('seizure-detail-title').textContent = editingExistingSeizure ? 'Edit Seizure' : 'Seizure logged ✓';
+  document.querySelector('#seizure-detail-modal .modal-sub').textContent =
+    editingExistingSeizure ? 'Update the details for this seizure:' : 'Add details while fresh (all optional):';
+  buildTriggerChips('sd-trigger-chips', s?.triggers || []);
+  document.getElementById('sd-duration').value = s?.duration || '';
+  document.getElementById('sd-type').value     = s?.type     || '';
+  document.getElementById('sd-notes').value    = s?.notes    || '';
   openModal('seizure-detail-modal');
 }
 document.getElementById('log-now-btn').addEventListener('click', logNow);
@@ -415,12 +432,15 @@ document.getElementById('sd-save-btn').addEventListener('click', async () => {
     const idx = seizures.findIndex(s => s.id === pendingSeizureId);
     if (idx !== -1) Object.assign(seizures[idx], { duration: dur, type, notes: notes_v, triggers: chips });
   });
+  const wasEditing = editingExistingSeizure;
   pendingSeizureId = null;
+  editingExistingSeizure = false;
   closeModal('seizure-detail-modal');
-  toast('Details saved ✓', 'success');
+  toast(wasEditing ? 'Seizure updated ✓' : 'Details saved ✓', 'success');
 });
 document.getElementById('sd-skip-btn').addEventListener('click', () => {
   pendingSeizureId = null;
+  editingExistingSeizure = false;
   closeModal('seizure-detail-modal');
 });
 
@@ -507,7 +527,10 @@ function renderList() {
           <div class="card-date-sub">${esc(niceDate(s.date))}</div>
           <div class="detail-tags">${durStr}${typeStr}${trigStr}${auraStr}</div>
         </div>
-        <button class="icon-btn" data-del="${esc(s.id)}" aria-label="Delete seizure record" title="Delete">🗑️</button>
+        <div style="display:flex;gap:4px;align-items:flex-start">
+          <button class="icon-btn" data-edit="${esc(s.id)}" aria-label="Edit seizure details" title="Edit details">✏️</button>
+          <button class="icon-btn" data-del="${esc(s.id)}" aria-label="Delete seizure record" title="Delete">🗑️</button>
+        </div>
       </div>
       <div class="card-notes-area">
         <div class="card-notes-text${s.notes?'':' empty'}" id="nt-${esc(s.id)}">${s.notes?esc(s.notes):'No notes yet.'}</div>
@@ -523,6 +546,7 @@ function renderList() {
     list.appendChild(card);
   });
   list.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => confirmDelete(b.dataset.del,'seizure')));
+  list.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => openSeizureDetailModal(b.dataset.edit)));
   list.querySelectorAll('[data-toggle]').forEach(b => b.addEventListener('click', () => openNotesEditor(b.dataset.toggle)));
   list.querySelectorAll('[data-save]').forEach(b => b.addEventListener('click', () => saveNotes(b.dataset.save)));
   list.querySelectorAll('[data-cancel]').forEach(b => b.addEventListener('click', () => closeNotesEditor(b.dataset.cancel)));
@@ -627,7 +651,7 @@ function renderMedsUI() {
   renderMedicationsUI();
   renderDoseHistory();
   renderRefillList();
-  renderAdheranceSummary();
+  renderAdherenceSummary();
 }
 
 function renderDoseHistory() {
@@ -702,11 +726,6 @@ function renderDoseHistory() {
   list.appendChild(legend);
 }
 
-// Wire the selector change
-document.addEventListener('DOMContentLoaded', () => {
-  const sel = document.getElementById('dose-history-med-select');
-  if (sel) sel.addEventListener('change', renderDoseHistory);
-});
 
 function renderMedicationsUI() {
   const c = document.getElementById('medications-list');
@@ -758,7 +777,7 @@ async function toggleDose(medId, time) {
   }
 }
 
-function renderAdheranceSummary() {
+function renderAdherenceSummary() {
   const box   = document.getElementById('adherence-summary');
   const pills = document.getElementById('adherence-pills');
   if (!medications.length) { box.hidden = true; return; }
@@ -1371,6 +1390,16 @@ async function init() {
   }
 
   renderAllUI();
+
+  // Handle manifest shortcut: ?action=log opens log modal immediately
+  if (new URLSearchParams(window.location.search).get('action') === 'log') {
+    history.replaceState(null, '', window.location.pathname);
+    setTimeout(() => logNow(), 400);
+  }
+
+  // Wire dose-history selector (safe here — DOM is ready, no race with DOMContentLoaded)
+  const dhs = document.getElementById('dose-history-med-select');
+  if (dhs) dhs.addEventListener('change', renderDoseHistory);
 
   // Weekly backup nag (simple client-side check)
   const lastBackup = localStorage.getItem('last_backup_prompt');
