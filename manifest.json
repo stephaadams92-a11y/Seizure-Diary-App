@@ -10,18 +10,38 @@
   "theme_color": "#372457",
   "id": "/",
   "icons": [
-    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
-    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     {
-      "name":"Log seizure",
-      "short_name":"Log seizure",
-      "description":"Immediately log a seizure and add details later",
-      "url":"/?action=seizure",
-      "icons":[{"src":"/icon-512.png","sizes":"512x512","type":"image/png"}]
+      "name": "Log seizure",
+      "short_name": "Log seizure",
+      "description": "Immediately log a seizure and add details later",
+      "url": "/quick/log.html",
+      "icons": [
+        {
+          "src": "/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
     }
   ],
-  "categories":["health","medical","lifestyle"],
-  "lang":"en-GB"
+  "categories": [
+    "health",
+    "medical",
+    "lifestyle"
+  ],
+  "lang": "en-GB"
 }
