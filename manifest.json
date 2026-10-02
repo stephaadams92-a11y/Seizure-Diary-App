@@ -1,37 +1,27 @@
 {
-  "name": "Seizurre – Diary Log App",
-  "short_name": "Seizurre",
-  "description": "A private seizure diary. All data stays on your device.",
-  "start_url": "./",
-  "scope": "./",
+  "name": "Untold Seizure Log",
+  "short_name": "Untold Log",
+  "description": "Seizure and aura logging, medication records, appointments, personal diary, care information and optional encrypted backup by The Untold Side.",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#1a0030",
-  "theme_color": "#6a1b9a",
-  "id": "./",
+  "orientation": "any",
+  "background_color": "#f7f3f1",
+  "theme_color": "#372457",
+  "id": "/",
   "icons": [
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
   ],
   "shortcuts": [
     {
-      "name": "Log Seizure",
-      "short_name": "Log Now",
-      "description": "Quickly log a seizure with the current time",
-      "url": "./?action=log",
-      "icons": [{ "src": "icon-512.png", "sizes": "512x512" }]
+      "name":"Log seizure",
+      "short_name":"Log seizure",
+      "description":"Immediately log a seizure and add details later",
+      "url":"/?action=seizure",
+      "icons":[{"src":"/icon-512.png","sizes":"512x512","type":"image/png"}]
     }
   ],
-  "categories": ["health", "medical", "lifestyle"],
-  "lang": "en-GB"
+  "categories":["health","medical","lifestyle"],
+  "lang":"en-GB"
 }
