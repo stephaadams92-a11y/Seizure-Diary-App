@@ -28,8 +28,8 @@ export default async function handler(req,res){
     webpush.setVapidDetails('mailto:stephaadams92@gmail.com',publicKey,privateKey);
     await sleep(delayMs);
     await webpush.sendNotification(subscription,JSON.stringify({
-      title:'Untold Seizure Log',
-      body:'Standby push test — this notification was sent from Vercel while the app was not active.',
+      title:'Medication is due',
+      body:'Untold Seizure Log reminder — medication is due now.',
       tag:'untold-standby-test',
       url:'/'
     }),{TTL:60,urgency:'high'});
