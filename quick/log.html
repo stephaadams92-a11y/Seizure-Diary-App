@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#372457">
+<title>Log Seizure — Untold</title>
+<link rel="icon" href="/icon-512.png">
+<link rel="apple-touch-icon" href="/icon-512.png">
+<style>
+:root{--bg:#f7f3f1;--card:#fff;--ink:#201a25;--muted:#6e6572;--line:#ded6df;--brand:#372457;--ok:#2f6a57}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--ink)}
+main{max-width:560px;margin:0 auto;padding:24px 16px 40px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 10px 26px rgba(55,36,87,.08)}
+.logo{width:72px;height:72px;border-radius:20px}.primary,.secondary{width:100%;min-height:52px;border-radius:14px;font:inherit;font-weight:800;margin-top:10px}.primary{border:0;background:var(--brand);color:#fff}.secondary{border:1px solid var(--line);background:#fff;color:var(--ink)}
+p{line-height:1.5}.muted{color:var(--muted);font-size:14px}.ok{background:#edf7f2;border-radius:12px;padding:12px}.warn{background:#fff4e8;border-radius:12px;padding:12px}
+</style>
+</head>
+<body>
+<main><div class="card" id="card"><img class="logo" src="/icon-512.png" alt=""><h1 id="title">Log Seizure shortcut</h1><div id="body"></div></div></main>
+<script>
+(()=>{
+  const cardBody=document.getElementById('body');
+  const setup=new URLSearchParams(location.search).get('setup')==='1';
+
+  function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+  function logSeizure(){
+    const DB_KEY='untoldSeizureLog_v1';
+    const raw=JSON.parse(localStorage.getItem(DB_KEY)||'{}');
+    if(!Array.isArray(raw.events)) raw.events=[];
+    if(!raw.profile) raw.profile={};
+    if(!raw.shared) raw.shared={};
+    const d=new Date();
+    const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+    const time=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    const event={
+      id:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)),
+      type:'seizure',date,time,subtype:'',duration:'',sleep:'',aura:'',awareness:false,
+      incontinence:false,injury:false,rescue:false,trigger:'',ownNotes:'',witnessNotes:'',
+      recovery:'',loggedBy:(raw.shared.userName||raw.profile.name||'Me'),
+      needsDetails:true,createdAt:Date.now()
+    };
+    raw.events.push(event);
+    if(!raw.version) raw.version=4;
+    localStorage.setItem(DB_KEY,JSON.stringify(raw));
+    try{
+      const bc=new BroadcastChannel('untold-seizure-log');
+      bc.postMessage({type:'quick-seizure-logged',id:event.id,at:event.createdAt});
+      bc.close();
+    }catch(e){}
+    return {date,time,id:event.id};
+  }
+
+  if(setup){
+    // Remove ?setup=1 before the user adds the current page to the Home Screen.
+    history.replaceState(null,'','/quick/log.html');
+    document.getElementById('title').textContent='Add one-tap Log Seizure';
+    cardBody.innerHTML=
+      '<div class="warn"><strong>No seizure has been logged.</strong> This is setup mode only.</div>'+
+      '<p>Use your browser menu now and choose <b>Add to Home screen</b> or <b>Create shortcut</b>. The saved icon will point to this clean page.</p>'+
+      '<p>Later, tapping that Home Screen icon will immediately record one seizure in Untold Seizure Log with the current date and time.</p>'+
+      '<button class="secondary" id="back">Back to Untold Seizure Log</button>'+
+      '<p class="muted">Do not refresh this page after setup; a normal visit to this clean page is the logging action.</p>';
+    document.getElementById('back').onclick=()=>location.href='/';
+    return;
+  }
+
+  try{
+    const result=logSeizure();
+    document.getElementById('title').textContent='Seizure logged';
+    cardBody.innerHTML=
+      '<div class="ok"><strong>'+esc(result.time)+'</strong><br>One seizure was saved directly into Untold Seizure Log.</div>'+
+      '<button class="primary" id="open">Open Untold Seizure Log</button>'+
+      '<p class="muted">Opening the normal app later will not create another seizure record.</p>';
+    document.getElementById('open').onclick=()=>location.href='/';
+  }catch(e){
+    document.getElementById('title').textContent='Could not log seizure';
+    cardBody.innerHTML='<p>Please open Untold Seizure Log and use the main LOG SEIZURE button.</p><button class="primary" id="open">Open app</button>';
+    document.getElementById('open').onclick=()=>location.href='/';
+  }
+})();
+</script>
+</body>
+</html>
