@@ -150,6 +150,19 @@ function cap(s){return s?String(s).charAt(0).toUpperCase()+String(s).slice(1):''
 function displayTime(t){if(!t)return'';const [h,m]=t.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}
 function migrate(raw){const s=Object.assign(clone(defaults),raw||{});s.profile=Object.assign(clone(defaults.profile),raw?.profile||{});s.profile.auraChoices=Array.isArray(s.profile.auraChoices)?s.profile.auraChoices:clone(defaults.profile.auraChoices);s.profile.typeChoices=Array.isArray(s.profile.typeChoices)?s.profile.typeChoices:clone(defaults.profile.typeChoices);s.profile.diaryCategories=Array.isArray(s.profile.diaryCategories)?s.profile.diaryCategories:clone(defaults.profile.diaryCategories);s.shared=Object.assign(clone(defaults.shared),raw?.shared||{});s.events=Array.isArray(raw?.events)?raw.events:[];s.journalEntries=Array.isArray(raw?.journalEntries)?raw.journalEntries:[];s.medications=Array.isArray(raw?.medications)?raw.medications.map(m=>{if(Array.isArray(m.doses))return m;const times=Array.isArray(m.times)?m.times:[];return{...m,form:'',startDate:'',stock:'',doses:times.map((time,i)=>({id:(m.id||'med')+'-dose-'+i,time,amount:m.dose||''}))}}):[];s.medLog=Array.isArray(raw?.medLog)?raw.medLog:[];s.medicationHistory=Array.isArray(raw?.medicationHistory)?raw.medicationHistory:[];s.appointments=Array.isArray(raw?.appointments)?raw.appointments:[];s.trash=Array.isArray(raw?.trash)?raw.trash:[];s.version=4;return s}
 function load(){try{return migrate(JSON.parse(localStorage.getItem(DB_KEY)))}catch(e){return clone(defaults)}}
+function refreshStateFromStorage(){
+  try{
+    const raw=localStorage.getItem(DB_KEY);
+    if(!raw)return false;
+    const fresh=migrate(JSON.parse(raw));
+    if(JSON.stringify(fresh)!==JSON.stringify(state)){
+      state=fresh;
+      renderAll();
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 function save(){localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}}
 function actor(){return state.shared.userName||state.profile.name||'Me'}
 function toast(msg,undo){const box=document.getElementById('toast');box.innerHTML='<span>'+esc(msg)+'</span>';if(undo){const b=document.createElement('button');b.textContent='Undo';b.onclick=()=>{undo();box.classList.add('hidden')};box.appendChild(b)}box.classList.remove('hidden');clearTimeout(box._t);box._t=setTimeout(()=>box.classList.add('hidden'),7000)}
@@ -287,7 +300,24 @@ function renderReminderStatus(){
   });
 }
 function drainNativeActions(){try{if(!window.AndroidBridge?.drainMedicationActions)return;const actions=JSON.parse(AndroidBridge.drainMedicationActions()||'[]');let changed=false;for(const a of actions){if(state.medLog.some(x=>x.nativeActionId===a.actionId))continue;const med=state.medications.find(m=>m.id===a.medId),dose=med?.doses?.find(d=>d.id===a.doseId);state.medLog.push({id:id(),nativeActionId:a.actionId,medId:a.medId,doseId:a.doseId,name:a.name||((med?.name||'Medication')+' '+(med?.strength||'')),dose:a.amount||dose?.amount||'',status:a.status,scheduledTime:a.scheduledTime||dose?.time||'',scheduledDate:a.scheduledDate||nowParts(new Date(a.at||Date.now())).date,at:Number(a.at)||Date.now(),loggedBy:'Phone reminder',source:'native'});changed=true}if(changed){localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll()}}catch(e){}}
-window.UntoldNative={refresh(){drainNativeActions();renderReminderStatus()}};window.UntoldApp={getState(){return clone(state)},replaceState(data){state=migrate(data);localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();syncNativeSchedules();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}},getVersion(){return state.version}};document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.UntoldNative.refresh()});
+window.UntoldNative={refresh(){drainNativeActions();renderReminderStatus()}};window.UntoldApp={getState(){return clone(state)},replaceState(data){state=migrate(data);localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();syncNativeSchedules();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}},getVersion(){return state.version}};
+function refreshAfterExternalWrite(){
+  const changed=refreshStateFromStorage();
+  drainNativeActions();
+  renderReminderStatus();
+  return changed;
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshAfterExternalWrite()});
+window.addEventListener('focus',refreshAfterExternalWrite);
+window.addEventListener('pageshow',refreshAfterExternalWrite);
+try{
+  const untoldChannel=new BroadcastChannel('untold-seizure-log');
+  untoldChannel.addEventListener('message',e=>{
+    if(e.data?.type==='quick-seizure-logged'){
+      if(refreshStateFromStorage()) toast('Seizure logged from Home Screen shortcut');
+    }
+  });
+}catch(e){}
 
 function setupLegalConsent(){const d=document.getElementById('legalConsentDialog'),a=document.getElementById('acceptTermsCheck'),b=document.getElementById('acceptMedicalCheck'),btn=document.getElementById('acceptLegalBtn');const refresh=()=>btn.disabled=!(a.checked&&b.checked);a.addEventListener('change',refresh);b.addEventListener('change',refresh);btn.addEventListener('click',()=>{if(!(a.checked&&b.checked))return;state.profile.legalAcceptedVersion=LEGAL_VERSION;state.profile.legalAcceptedAt=Date.now();save();d.close();toast('Terms accepted')});if(state.profile.legalAcceptedVersion!==LEGAL_VERSION)setTimeout(()=>d.showModal(),0)}
 function renderAll(){renderHome();renderEvents();renderJournal();renderMedications();renderAppointments();renderCare();renderSettings();renderTrash();renderReminderStatus();defaultReportDates()}
