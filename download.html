@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#372457">
+<meta name="description" content="Install or open Untold Seizure Log by The Untold Side.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<title>Install Untold Seizure Log</title>
+<style>
+:root{--bg:#f7f3f1;--card:#fff;--ink:#201a25;--muted:#6e6572;--line:#ded6df;--brand:#372457;--soft:#eee7f4;--ok:#2f6a57;--shadow:0 16px 40px rgba(55,36,87,.10)}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}main{max-width:680px;margin:auto;padding:32px 16px 60px}.hero{text-align:center;padding:20px 4px}.icon{width:92px;height:92px;border-radius:25px;box-shadow:var(--shadow)}h1{font-size:30px;margin:16px 0 7px}.by{color:var(--muted);margin:0}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px;margin:12px 0;box-shadow:var(--shadow)}.buttons{display:grid;gap:10px}.btn{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:15px;padding:12px 16px;font-weight:800;text-decoration:none;font-size:16px}.primary{background:var(--brand);color:#fff;border:0}.secondary{background:#fff;color:var(--brand);border:1px solid var(--line)}.tick{display:grid;grid-template-columns:28px 1fr;gap:8px;margin:12px 0;align-items:start}.tick b{color:var(--ok)}.small{font-size:13px;line-height:1.5;color:var(--muted)}.privacy{background:var(--soft);border-radius:15px;padding:13px;line-height:1.45}.status{font-size:13px;text-align:center;color:var(--muted);margin-top:10px}:focus-visible{outline:3px solid #8b6aa3;outline-offset:3px}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <img class="icon" src="/icon-192.png" alt="Untold Seizure Log icon">
+    <h1>Untold Seizure Log</h1>
+    <p class="by">by The Untold Side · Universal beta</p>
+  </section>
+
+  <div class="card">
+    <div class="buttons">
+      <button class="btn primary" id="installBtn" type="button">Install on this phone</button>
+      <a class="btn secondary" href="/">Open without installing</a>
+    </div>
+    <div class="status" id="installStatus">Works on modern Android phones, iPhone, iPad and computers.</div>
+  </div>
+
+  <div class="card">
+    <h2>What it does</h2>
+    <div class="tick"><b>✓</b><span>One-tap seizure and aura logging with details added later.</span></div>
+    <div class="tick"><b>✓</b><span>Medication records, appointments, personal diary, care plan and reports.</span></div>
+    <div class="tick"><b>✓</b><span>Works offline after it has been installed/opened successfully once.</span></div>
+    <div class="tick"><b>✓</b><span>Optional automatic encrypted cloud backup with a private recovery code.</span></div>
+  </div>
+
+  <div class="card">
+    <h2>Privacy first</h2>
+    <div class="privacy"><b>Your seizure log starts on your device.</b> Automatic cloud backup is optional. If you turn it on, the log is encrypted on your device before upload; the recovery key is kept in your recovery code.</div>
+    <p class="small">Untold Seizure Log is a record and reminder tool. It does not diagnose seizures, detect emergencies, or replace professional medical advice or a personalised care plan.</p>
+  </div>
+
+  <p class="small" style="text-align:center">Beta 0.5 · The Untold Side</p>
+</main>
+<script>
+let promptEvent=null;const btn=document.getElementById('installBtn'),status=document.getElementById('installStatus');
+function installed(){return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}
+function refresh(){if(installed()){btn.textContent='App installed';btn.disabled=true;status.textContent='Untold Seizure Log is installed on this device.';return}const ios=/iphone|ipad|ipod/i.test(navigator.userAgent||'');status.textContent=ios?'On iPhone/iPad, installation uses Share → Add to Home Screen.':'Tap Install on this phone. If your browser does not show an install prompt, use its menu → Install app / Add to Home screen.'}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEvent=e;refresh()});addEventListener('appinstalled',()=>{promptEvent=null;refresh()});
+btn.onclick=async()=>{if(promptEvent){promptEvent.prompt();await promptEvent.userChoice.catch(()=>{});promptEvent=null;refresh();return}if(/iphone|ipad|ipod/i.test(navigator.userAgent||''))alert('Tap the Share button, choose “Add to Home Screen”, then tap Add.');else alert('Open your browser menu and choose “Install app” or “Add to Home screen”.')};refresh();
+if('serviceWorker'in navigator)addEventListener('load',()=>navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
