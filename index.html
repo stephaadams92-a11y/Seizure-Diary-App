@@ -1,479 +1,636 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-  <meta name="theme-color" content="#1a0030" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#6a1b9a" media="(prefers-color-scheme: light)">
-  <meta name="description" content="Seizurre – Your private seizure diary. All data stays on your device.">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Seizurre – Diary Log</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon-512.png">
-  <link rel="apple-touch-icon" href="icon-512.png">
-  <link rel="stylesheet" href="style.css">
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').then(reg => {
-        reg.addEventListener('updatefound', () => {
-          const nw = reg.installing;
-          nw.addEventListener('statechange', () => {
-            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-              document.getElementById('sw-update-bar').hidden = false;
-            }
-          });
-        });
-      });
-    }
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#372457">
+<meta name="description" content="Untold Seizure Log — seizure logging, medication reminders, appointments, personal diary and care information.">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-512.png">
+<style id="universal-css">
+.install-card,.cloud-card{position:relative;overflow:hidden}
+.install-card::after,.cloud-card::after{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brand2);opacity:.8}
+.cloud-status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 4px}
+.cloud-dot{width:9px;height:9px;border-radius:999px;background:#8a818c;display:inline-block}
+.cloud-dot.ok{background:var(--ok)}
+.cloud-dot.warn{background:var(--warn)}
+.cloud-dot.bad{background:var(--danger)}
+.recovery-code{display:block;width:100%;min-height:86px;word-break:break-all;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;background:#f7f4f8;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--ink)}
+.install-help{line-height:1.45}
+.online-pill{position:fixed;right:12px;top:calc(10px + env(safe-area-inset-top));z-index:20;border-radius:999px;padding:6px 9px;font-size:11px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow)}
+.online-pill.offline{background:#fff1df;color:var(--warn)}
+@media(max-width:560px){.online-pill{top:auto;bottom:calc(76px + env(safe-area-inset-bottom));right:10px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+@media(prefers-contrast:more){:root{--line:#887c8a;--muted:#443c46}.card,.field input,.field select,.field textarea,.secondary,.mini,.quick{border-width:2px}}
+:focus-visible{outline:3px solid #8b6aa3;outline-offset:3px}
+
+</style>
+<link rel="icon" href="icon-512.png" type="image/png">
+<title>Untold Seizure Log</title>
+<style>
+:root{--bg:#f7f3f1;--card:#fff;--ink:#201a25;--muted:#6e6572;--line:#ded6df;--brand:#372457;--brand2:#6f527d;--soft:#eee7f4;--danger:#8f2f3c;--ok:#2f6a57;--warn:#9a5b1e;--shadow:0 10px 26px rgba(55,36,87,.08);--radius:18px}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+.app-shell{max-width:760px;margin:0 auto;min-height:100vh;padding:env(safe-area-inset-top) 14px calc(86px + env(safe-area-inset-bottom))}header{display:flex;align-items:center;gap:12px;padding:18px 4px 10px}.mark{width:46px;height:46px;border-radius:14px;box-shadow:var(--shadow)}.brand h1{font-size:20px;margin:0;line-height:1.1}.brand p{margin:3px 0 0;font-size:12px;color:var(--muted)}.sync-pill{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;font-size:12px;color:var(--muted)}
+.screen{display:none}.screen.active{display:block}.section-title{margin:18px 2px 10px;font-size:16px}.subtle{color:var(--muted);font-size:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);margin:10px 0}.hero{padding:18px}.primary-log{width:100%;min-height:108px;border:0;border-radius:24px;background:var(--brand);color:#fff;font-weight:800;font-size:26px;letter-spacing:.01em;box-shadow:0 16px 30px rgba(55,36,87,.22)}.primary-log small{display:block;font-size:13px;font-weight:500;opacity:.83;margin-top:6px}.quick-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:10px}.quick{min-height:54px;border:1px solid var(--line);border-radius:15px;background:#fff;color:var(--ink);font-weight:700}.quick.timer-active{background:#f7e8ec;border-color:#c98995;color:#6f1725}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.stat{background:#fff;border:1px solid var(--line);border-radius:15px;padding:12px;text-align:center}.stat b{font-size:22px;display:block}.stat span{font-size:11px;color:var(--muted)}.row{display:flex;align-items:center;gap:10px}.grow{flex:1;min-width:0}.meta{font-size:12px;color:var(--muted);margin-top:3px}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;background:var(--soft);font-size:11px;margin-right:5px;margin-top:5px}.tag.ok{background:#e8f4ee;color:var(--ok)}.tag.warn{background:#fff1df;color:var(--warn)}
+.event{padding:14px 2px;border-bottom:1px solid var(--line)}.event:last-child{border-bottom:0}.event-actions{display:flex;gap:6px;flex-wrap:wrap}.mini{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 9px;font-size:12px}.danger{color:var(--danger)}.empty{padding:20px;text-align:center;color:var(--muted)}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom);z-index:10}.nav-inner{width:min(760px,100%);display:grid;grid-template-columns:repeat(5,1fr)}.nav button{border:0;background:transparent;min-height:68px;font-size:11px;color:var(--muted);padding:8px 2px}.nav button b{font-size:20px;display:block;line-height:1.2}.nav button.active{color:var(--brand);font-weight:800}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar select,.toolbar button{border:1px solid var(--line);background:#fff;border-radius:12px;min-height:44px;padding:9px 12px}.toolbar select{flex:1}.field{margin:12px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;border:1px solid #cfc5d1;border-radius:12px;background:#fff;padding:12px;font-size:16px;color:var(--ink)}.field textarea{min-height:88px;resize:vertical}.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.check{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--line);padding:9px;border-radius:12px;background:#fff}.check input{margin-top:3px}.add-btn{border:0;background:var(--brand);color:#fff;border-radius:14px;padding:12px 15px;font-weight:800}.secondary{border:1px solid var(--line);background:#fff;border-radius:14px;padding:11px 14px}.button-row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+dialog{width:min(690px,calc(100% - 22px));max-height:88vh;border:0;border-radius:22px;padding:0;box-shadow:0 24px 70px rgba(0,0,0,.25);color:var(--ink)}dialog::backdrop{background:rgba(22,16,27,.56)}.dialog-body{padding:18px;overflow:auto;max-height:88vh}.dialog-head{display:flex;align-items:center;gap:10px}.dialog-head h2{font-size:20px;margin:0;flex:1}.close{width:42px;height:42px;border:0;background:#f3eff4;border-radius:12px;font-size:20px}.alert{border-left:4px solid var(--brand2);background:#f5f0f8;padding:12px;border-radius:10px;font-size:13px}.warning{border-left-color:#b76a2a;background:#fff4e8}.success{border-left-color:var(--ok);background:#edf7f2}.firstaid li{margin:8px 0;line-height:1.35}.callout{background:#fff4e8;border:1px solid #ecd5b8;border-radius:14px;padding:13px}.profile-card{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--soft);font-weight:800;color:var(--brand)}
+.dose-box{border:1px solid var(--line);border-radius:15px;padding:12px;margin:8px 0;background:#fbf9fb}.journal-entry{padding:14px 2px;border-bottom:1px solid var(--line)}.journal-entry:last-child{border-bottom:0}.journal-body{white-space:pre-wrap;line-height:1.45;margin-top:8px}.support-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;background:var(--brand);color:#fff;border-radius:14px;padding:12px 16px;font-weight:800;text-decoration:none}.search-row{display:grid;grid-template-columns:1.5fr 1fr;gap:8px}.privacy-note{font-size:12px;color:var(--muted);margin-top:5px}.dose-row{display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;align-items:end;margin:8px 0}.dose-row .field{margin:0}.dose-remove{height:46px;min-width:46px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--danger)}.today-row{display:grid;grid-template-columns:70px 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}.today-row:last-child{border-bottom:0}.time-big{font-weight:800;color:var(--brand)}.status-dot{font-size:11px;font-weight:800}.status-dot.taken{color:var(--ok)}.status-dot.missed{color:var(--danger)}.status-dot.overdue{color:var(--warn)}
+.legal-list li{margin:8px 0;line-height:1.4}.legal-card h3{margin-top:18px}.legal-card h3:first-child{margin-top:0}.legal-card p,.legal-card li{font-size:13px;line-height:1.5}.legal-links{display:flex;gap:8px;flex-wrap:wrap}.sensitive{border:1px solid #e5c99f;background:#fff7ea;border-radius:14px;padding:12px;font-size:13px}.consent-check{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:11px;border:1px solid var(--line);border-radius:12px;background:#fff}.consent-check input{margin-top:3px}.contact-link{word-break:break-all}.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:#211b25;color:#fff;padding:11px 12px;border-radius:14px;z-index:30;box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;align-items:center;gap:12px;max-width:calc(100% - 24px)}.toast button{border:0;border-radius:9px;padding:7px 9px;font-weight:800}.report-preview{font-size:13px}.report-preview h2{font-size:18px}#print-report{display:none}
+@media(max-width:430px){.quick-grid{grid-template-columns:1fr 1fr}.search-row{grid-template-columns:1fr}.two,.checkgrid{grid-template-columns:1fr}.sync-pill{display:none}.stats{gap:5px}.stat{padding:10px 4px}.stat b{font-size:19px}.dose-row{grid-template-columns:1fr 1fr auto}.today-row{grid-template-columns:62px 1fr}.today-row .mini{grid-column:2/3}}
+@media print{body{background:#fff;color:#000}.app-shell,.nav,.toast,dialog{display:none!important}#print-report{display:block!important;padding:0 8mm;font-family:Arial,sans-serif;font-size:10.5pt}#print-report h1{font-size:18pt;margin:0 0 4mm}#print-report h2{font-size:13pt;border-bottom:1px solid #777;padding-bottom:2mm;margin-top:6mm}.print-muted{color:#444;font-size:9pt}.no-break{break-inside:avoid}}
+</style>
 </head>
-<body class="dark-mode">
-
-<!-- SW UPDATE BAR -->
-<div id="sw-update-bar" class="sw-update-bar" hidden role="alert">
-  🔄 Update ready — <button id="sw-reload-btn">Tap to update</button>
-</div>
-
-<!-- ONBOARDING BANNER -->
-<div id="onboarding-banner" class="onboarding-banner" role="region" aria-label="Welcome information" hidden>
-  <div class="onboarding-inner">
-    <span class="onboard-icon" aria-hidden="true">🔒</span>
-    <div class="onboard-text">
-      <strong>Your data never leaves this device.</strong>
-      Stored locally — no accounts, no servers, no cloud. Use Backup regularly to keep a copy safe.
-    </div>
-    <button id="close-onboarding" class="onboard-close" aria-label="Dismiss welcome message">✕</button>
+<body>
+<div class="app-shell">
+<header><img class="mark" src="icon.svg" alt="Untold Seizure Log icon"><div class="brand"><h1>Untold Seizure Log</h1><p>by The Untold Side</p></div><button class="sync-pill" id="syncStatus">● Local only</button></header>
+<main>
+<section class="screen active" data-screen="home">
+  <div class="card hero"><button id="quickSeizure" class="primary-log">LOG SEIZURE<small>One tap now — add details later</small></button><div class="quick-grid"><button id="quickAura" class="quick">＋ Aura</button><button id="timerBtn" class="quick">⏱ Start timer</button><button id="otherEventBtn" class="quick">＋ Other event</button><button id="quickFirstAid" class="quick">♡ First aid</button></div></div>
+  <div class="stats"><div class="stat"><b id="todayCount">0</b><span>today</span></div><div class="stat"><b id="weekCount">0</b><span>last 7 days</span></div><div class="stat"><b id="monthCount">0</b><span>last 30 days</span></div></div>
+  <h2 class="section-title">Today</h2><div class="card" id="todaySchedule"></div>
+  <h2 class="section-title">Next appointment</h2><div class="card" id="nextAppointment"></div>
+  <h2 class="section-title">Most recent event</h2><div class="card" id="recentEvent"></div>
+</section>
+<section class="screen" data-screen="seizures"><div class="row"><div class="grow"><h2>Seizures & events</h2><div class="subtle">Seizures, auras, possible seizures, clusters and recovery events</div></div><button class="add-btn" id="addEventBtn">＋ Add</button></div><div class="toolbar" style="margin-top:12px"><select id="eventFilter"><option value="all">All events</option><option value="seizure">Seizures</option><option value="aura">Auras</option><option value="possible">Possible seizures</option><option value="cluster">Clusters</option><option value="recovery">Recovery</option><option value="other">Other</option></select></div><div class="card" id="eventList"></div></section>
+<section class="screen" data-screen="diary"><div class="row"><div class="grow"><h2>Personal diary</h2><div class="subtle">Thoughts, feelings, worries, research, awareness and anything you want to remember</div></div><button class="add-btn" id="addJournalBtn">＋ Write</button></div><div class="search-row" style="margin-top:12px"><div class="field" style="margin:0"><label for="journalSearch">Search diary</label><input id="journalSearch" type="search" placeholder="Search words, titles or notes"></div><div class="field" style="margin:0"><label for="journalCategoryFilter">Category</label><select id="journalCategoryFilter"><option value="all">All categories</option></select></div></div><div class="card" id="journalList"></div></section>
+<section class="screen" data-screen="medication"><div class="row"><div class="grow"><h2>Medication</h2><div class="subtle">Each dose time has its own phone reminder</div></div><button class="add-btn" id="addMedicationBtn">＋ Add</button></div><div class="card" id="reminderStatusCard"></div><div class="card" id="medicationList"></div><h2 class="section-title">Recent medication log</h2><div class="card" id="medLog"></div><h2 class="section-title">Medication changes</h2><div class="card" id="medHistory"></div></section>
+<section class="screen" data-screen="care">
+  <div class="row"><button class="secondary" type="button" data-go="more">← More</button><div class="grow"></div></div><h2>First aid & care</h2><div class="card firstaid"><h3>General seizure first aid</h3><ol><li>Stay with the person and keep them safe from hazards.</li><li>Time the seizure. Protect the head if they are on the ground.</li><li>Loosen tight clothing around the neck where practical.</li><li>Do not restrain movements and do not put anything in the mouth.</li><li>When convulsive movements stop, place them on their side if safe and monitor breathing.</li><li>Stay until they have recovered enough to be safely left or their usual care plan says otherwise.</li></ol><div class="callout"><b>Emergency help:</b> follow the person’s care plan and local emergency guidance. Seek emergency help for prolonged or repeated seizures without recovery, serious injury, breathing difficulty, or when otherwise indicated by their plan.</div><p class="subtle">General information only. A personalised clinician-agreed seizure care plan takes priority.</p></div>
+  <div class="card"><h3>My care plan</h3><div class="field"><label>Personal seizure / emergency instructions</label><textarea id="carePlan" placeholder="Add the instructions that apply to this person"></textarea></div><div class="two"><div class="field"><label>Emergency contact</label><input id="emergencyContact"></div><div class="field"><label>Local emergency number</label><input id="emergencyNumber" inputmode="tel"></div></div><button class="add-btn" id="saveCare">Save care plan</button></div>
+  <div class="card"><h3>Connected people</h3><div class="profile-card"><div class="row"><div class="avatar">ME</div><div><strong id="ownerLabel">Profile owner</strong><div class="meta" id="deviceUserLabel">This device</div></div></div><span class="tag">Local</span></div><div class="alert" style="margin-top:12px"><b>Two-phone sync is prepared but not switched on yet.</b><br>The records already store who logged them. The cloud account/pairing layer still needs to be connected before two phones can update each other live.</div><button class="secondary" id="pairInfoBtn" style="margin-top:10px">How pairing will work</button></div>
+</section>
+<section class="screen" data-screen="more">
+  <h2>More</h2><div class="card"><div class="row"><div class="grow"><strong>First aid & personal care plan</strong><div class="meta">General seizure first aid, emergency contacts and your own instructions</div></div><button class="add-btn" type="button" data-go="care">Open</button></div></div><div class="card"><div class="row"><div class="grow"><strong>Appointments</strong><div class="meta">Hospital, doctor and clinic reminders</div></div><button class="add-btn" id="addAppointmentBtn">＋ Add</button></div><div id="appointmentList" style="margin-top:8px"></div></div>
+  <div class="card"><h3>Print / report</h3><div class="two"><div class="field"><label>From</label><input type="date" id="reportFrom"></div><div class="field"><label>To</label><input type="date" id="reportTo"></div></div><div class="checkgrid"><label class="check"><input type="checkbox" id="includeMeds" checked> Current medication</label><label class="check"><input type="checkbox" id="includeNotes" checked> Event details</label><label class="check"><input type="checkbox" id="includeDiary"> Selected diary entries</label></div><p class="subtle">Diary entries are excluded by default. Only entries marked “Allow in reports” can be included.</p><div class="button-row"><button class="secondary" id="previewReportBtn">Preview</button><button class="add-btn" id="printReportBtn">Print / Save PDF</button></div><div id="reportPreview" class="report-preview"></div></div>
+  <div class="card"><h3>Profile & settings</h3><div class="field"><label>Name used on reports</label><input id="profileName" placeholder="Person whose seizures are being recorded"></div><div class="two"><div class="field"><label>This device is used by</label><input id="deviceUserName" placeholder="e.g. Stephanie or Dave"></div><div class="field"><label>Role</label><select id="deviceRole"><option value="owner">Owner</option><option value="caregiver">Caregiver</option></select></div></div><div class="field"><label>Aura choices <span class="subtle">(one per line)</span></label><textarea id="auraChoices"></textarea></div><div class="field"><label>Seizure / event types <span class="subtle">(one per line)</span></label><textarea id="typeChoices"></textarea></div><div class="field"><label>Diary categories <span class="subtle">(one per line)</span></label><textarea id="diaryCategories"></textarea></div><button class="add-btn" id="saveSettings">Save settings</button><div class="button-row" style="justify-content:flex-start"><button class="secondary" id="pinSeizureShortcut" type="button">Add Log Seizure button to Home screen</button></div><p class="subtle">On supported Android launchers this adds a one-tap home-screen shortcut that immediately logs a seizure.</p></div>
+  <div class="card"><h3>Backup & restore</h3><p class="subtle">Backup creates a portable copy of the local diary. It is separate from future live device syncing.</p><div class="sensitive"><b>Privacy warning:</b> backup files can contain seizure, medication, appointment and diary information. Manual backup downloads are readable JSON, so keep them somewhere secure and only share them intentionally.</div><div class="button-row" style="justify-content:flex-start"><button class="secondary" id="backupBtn">Download backup</button><label class="secondary" for="restoreInput" style="cursor:pointer">Restore backup</label><input class="hidden" id="restoreInput" type="file" accept="application/json,.json"></div></div>
+  <div class="card"><h3>Recently deleted</h3><div id="trashList"></div></div>
+  <div class="card"><h3>Support the app</h3><p class="subtle">Untold Seizure Log is free. If it helps you and you would like to support future development, you can optionally buy me a coffee through PayPal. Support does not unlock features and is never required.</p><button class="support-btn" id="supportBtn" type="button">☕ Buy Me a Coffee</button><div class="meta" id="supportHint" style="margin-top:8px">Opens PayPal in your browser. This app does not receive or store your payment details.</div></div>
+  <div class="card"><h3>About & contact</h3><p><b>Untold Seizure Log</b><br><span class="subtle">by The Untold Side · Universal beta 0.5</span></p><p class="subtle">Record what happened. Remember what matters.</p><p class="subtle">Core seizure logging, medication reminders, first aid, diary, appointments, reports and local backup are available in this free version.</p><div class="legal-links"><button class="secondary" id="contactBtn" type="button">✉ Contact developer</button><button class="secondary" type="button" data-go="legal">Terms, privacy & disclaimer</button></div><p class="meta contact-link">stephaadams92@gmail.com</p></div>
+</section>
+<section class="screen" data-screen="legal">
+  <div class="row"><button class="secondary" type="button" data-go="more">← More</button><div class="grow"></div></div>
+  <h2>Terms, privacy & disclaimer</h2>
+  <div class="card legal-card">
+    <div class="alert warning"><b>Important:</b> Untold Seizure Log is a record and reminder tool. It does not diagnose seizures, monitor you for emergencies, replace professional medical advice, or tell you how to change medication.</div>
+    <h3>Terms & Conditions</h3>
+    <p><b>Last updated: 2 October 2026.</b> By using the app you agree to use it as a personal record/reminder tool and to check information that matters to your care.</p>
+    <ol class="legal-list">
+      <li><b>Your entries.</b> Seizure, medication, appointment, diary and care-plan information is entered by you or another person using the device. Check important records and reports before relying on or sharing them.</li>
+      <li><b>Medication reminders.</b> Reminders are a convenience, not a dosing instruction or medical service. Phone settings, permissions, battery restrictions, restarts, software faults or other device issues can delay or prevent a notification. Follow the medication plan given by your clinician/pharmacist and do not change, double or skip a dose because of the app.</li>
+      <li><b>Emergencies.</b> The app does not detect seizures automatically, continuously monitor breathing, contact emergency services, or guarantee that anyone else knows an event has occurred. Follow your personal care plan and local emergency guidance.</li>
+      <li><b>Caregiver use.</b> If you record or view information for another person, make sure you have their permission or other appropriate authority to do so.</li>
+      <li><b>Sharing.</b> Reports and backups may contain sensitive health or diary information. Check the contents and recipient before sharing. Once information leaves the app, Untold Seizure Log cannot control how the recipient, printer, email provider, cloud drive or other service stores or forwards it.</li>
+      <li><b>Backups.</b> Manual backup downloads create readable JSON files. They are not encrypted by Untold Seizure Log. Keep them secure. Clearing app data or uninstalling the app can remove local records if you have not made a separate backup.</li>
+      <li><b>Availability and accuracy.</b> Reasonable care is taken in the app design, but uninterrupted operation, error-free reminders, complete data, or suitability for a particular medical purpose cannot be guaranteed. Nothing in these terms removes rights that cannot legally be excluded.</li>
+      <li><b>Third-party services.</b> PayPal, email, Android printing and any other external service open outside the app and are governed by that service's own terms and privacy practices.</li>
+    </ol>
+    <h3>Medical disclaimer</h3>
+    <p>The app provides general organisational and seizure first-aid information only. It is not a medical device for diagnosis, seizure detection or treatment, and it does not provide personalised medical advice. Information can be incomplete, entered incorrectly, or become outdated. For medication, diagnosis, rescue treatment, seizure safety and emergency thresholds, follow advice from a qualified healthcare professional and your personalised care plan.</p>
+    <p>If urgent medical help is needed, use your local emergency service rather than relying on this app.</p>
+    <h3>Privacy in this free version</h3>
+    <p>Seizure logs, diary entries, medications, appointments and profile details are stored locally on the device. This universal beta does not use advertising analytics. Manual backup files are created only when you ask for one. Support and contact buttons open external apps or websites.</p>
+    <p><b>Optional encrypted cloud backup:</b> if you explicitly turn automatic cloud backup on, the app encrypts the complete log on your device before upload. The backup service receives encrypted ciphertext plus limited technical metadata such as app/schema version and backup time. The recovery encryption key remains in your recovery code and is not sent with the backup request. You can continue using the app without cloud backup.</p>
+    <p>Live caregiver/two-phone synchronisation is not enabled in this beta and would require a further privacy and security review before release.</p>
+    <h3>Sharing warning</h3>
+    <div class="sensitive"><b>Before sharing or printing:</b> check names, medication, seizure details, diary entries and contact information. Share only with people/services you intend to receive it. A screenshot, PDF, printout or backup can remain available after you delete the original from this app.</div>
+    <h3>Contact</h3>
+    <p>Questions, feedback or problem reports: <b class="contact-link">stephaadams92@gmail.com</b></p>
+    <div class="legal-links"><button class="secondary" id="legalContactBtn" type="button">✉ Email developer</button><button class="support-btn" id="legalSupportBtn" type="button">☕ Buy Me a Coffee</button></div>
   </div>
-</div>
+</section>
+</main></div>
+<nav class="nav" aria-label="Main navigation"><div class="nav-inner"><button class="active" data-go="home"><b>⌂</b>Home</button><button data-go="seizures"><b>≋</b>Seizures</button><button data-go="diary"><b>✎</b>Diary</button><button data-go="medication"><b>✚</b>Medication</button><button data-go="more"><b>•••</b>More</button></div></nav>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div><div id="print-report"></div>
 
-<!-- STATUS BAR -->
-<div id="status-bar" class="status-bar" role="status" aria-live="polite">
-  <span id="offline-chip" class="status-chip chip-offline" hidden aria-live="assertive">⚡ Offline mode</span>
-  <span id="db-chip" class="status-chip chip-db">⏳ Loading…</span>
-</div>
+<dialog id="eventDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="eventDialogTitle">Event</h2><button class="close" data-close="eventDialog">×</button></div><form id="eventForm"><input type="hidden" id="eventId"><div class="two"><div class="field"><label>Event</label><select id="eventType"></select></div><div class="field"><label>Seizure type / label</label><input id="eventSubtype" placeholder="Optional"></div></div><div class="two"><div class="field"><label>Date</label><input type="date" id="eventDate" required></div><div class="field"><label>Time</label><input type="time" id="eventTime" required></div></div><div class="two"><div class="field"><label>Duration</label><input id="eventDuration" placeholder="e.g. 1 min 30 sec"></div><div class="field"><label>Awake / asleep</label><select id="eventSleep"><option value="">Not recorded</option><option>Awake</option><option>Asleep</option><option>Waking</option></select></div></div><div class="field"><label>Aura / warning</label><input id="eventAura" list="auraList" placeholder="Choose or type your own"><datalist id="auraList"></datalist></div><div class="checkgrid"><label class="check"><input type="checkbox" id="eventAwareness"> Awareness affected</label><label class="check"><input type="checkbox" id="eventIncontinence"> Incontinence</label><label class="check"><input type="checkbox" id="eventInjury"> Injury</label><label class="check"><input type="checkbox" id="eventRescue"> Rescue medication used</label></div><div class="field"><label>Possible trigger</label><input id="eventTrigger" placeholder="Sleep, stress, illness, missed dose, unknown…"></div><div class="field"><label>What I remember</label><textarea id="eventOwnNotes"></textarea></div><div class="field"><label>Witness observation</label><textarea id="eventWitnessNotes"></textarea></div><div class="field"><label>Recovery / after-effects</label><textarea id="eventRecovery" placeholder="Confusion, fatigue, sleep, headache, memory, injury, when back to baseline…"></textarea></div><div class="field"><label>Logged by</label><input id="eventLoggedBy"></div><div class="button-row"><button type="button" class="secondary" data-close="eventDialog">Cancel</button><button class="add-btn" type="submit">Save event</button></div></form></div></dialog>
 
-<!-- HEADER -->
-<header role="banner">
-  <div class="header-left">
-    <div class="header-title">Seizurre</div>
-    <div class="header-sub">Diary Log App</div>
-  </div>
-  <div class="header-actions">
-    <button id="emergency-btn" class="emergency-header-btn" aria-label="Open first aid emergency guide" title="Emergency First Aid">🆘</button>
-    <button id="dark-toggle-btn" class="icon-action-btn" aria-label="Toggle dark/light mode" title="Toggle dark mode">🌙</button>
-  </div>
-</header>
+<dialog id="journalDialog"><div class="dialog-body"><div class="dialog-head"><h2 id="journalDialogTitle">Diary entry</h2><button class="close" data-close="journalDialog">×</button></div><form id="journalForm"><input type="hidden" id="journalId"><div class="field"><label>Title</label><input id="journalTitle" maxlength="120" placeholder="Optional short title"></div><div class="two"><div class="field"><label>Category</label><select id="journalCategory"></select></div><div class="field"><label>Feeling / mood <span class="subtle">(optional)</span></label><input id="journalMood" maxlength="80" placeholder="e.g. worried, hopeful, exhausted"></div></div><div class="two"><div class="field"><label>Date</label><input type="date" id="journalDate" required></div><div class="field"><label>Time</label><input type="time" id="journalTime" required></div></div><div class="field"><label>Write anything you want to remember</label><textarea id="journalText" required placeholder="Thoughts, feelings, worries, research, awareness ideas, questions…" style="min-height:160px"></textarea></div><div class="field"><label>Link to something in the app <span class="subtle">(optional)</span></label><select id="journalLink"><option value="">No link</option></select></div><div class="checkgrid"><label class="check"><input type="checkbox" id="journalPrivate" checked> Private diary entry</label><label class="check"><input type="checkbox" id="journalIncludeReport"> Allow in reports</label></div><div class="privacy-note">Private entries are marked now so a future shared-phone version can keep them owner-only. Diary entries are never printed unless you explicitly allow them and choose to include diary entries in the report.</div><div class="button-row"><button type="button" class="secondary" data-close="journalDialog">Cancel</button><button class="add-btn" type="submit">Save diary entry</button></div></form></div></dialog>
 
-<!-- CLOCK -->
-<div id="live-clock" role="timer" aria-label="Current time">
-  <div id="clock-time" aria-live="off">--:--:--</div>
-  <div id="live-clock-date"></div>
-</div>
+<dialog id="medDialog"><div class="dialog-body"><div class="dialog-head"><h2>Medication</h2><button class="close" data-close="medDialog">×</button></div><form id="medForm"><input id="medId" type="hidden"><div class="field"><label>Name</label><input id="medName" required placeholder="e.g. Zonisamide"></div><div class="two"><div class="field"><label>Strength</label><input id="medStrength" placeholder="e.g. 100 mg"></div><div class="field"><label>Form</label><select id="medFormType"><option value="">Not set</option><option>Tablet</option><option>Capsule</option><option>Liquid</option><option>Other</option></select></div></div><div class="dose-box"><div class="row"><div class="grow"><strong>Dose times</strong><div class="meta">Each time is a separate Android reminder.</div></div><button type="button" class="secondary" id="addDoseTime">＋ Add time</button></div><div id="doseRows"></div></div><div class="two"><div class="field"><label>Start date</label><input type="date" id="medStartDate"></div><div class="field"><label>Stock remaining <span class="subtle">(optional)</span></label><input type="number" min="0" id="medStock" inputmode="numeric"></div></div><div class="field"><label>Notes / instructions</label><textarea id="medNotes"></textarea></div><div class="button-row"><button type="button" class="secondary" data-close="medDialog">Cancel</button><button class="add-btn" type="submit">Save medication</button></div></form></div></dialog>
 
-<!-- TOAST -->
-<div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+<dialog id="appointmentDialog"><div class="dialog-body"><div class="dialog-head"><h2>Appointment</h2><button class="close" data-close="appointmentDialog">×</button></div><form id="appointmentForm"><input id="appointmentId" type="hidden"><div class="field"><label>Appointment</label><input id="appointmentTitle" required placeholder="Neurology / GP / hospital"></div><div class="two"><div class="field"><label>Date</label><input type="date" id="appointmentDate" required></div><div class="field"><label>Time</label><input type="time" id="appointmentTime"></div></div><div class="field"><label>Location</label><input id="appointmentLocation"></div><div class="two"><div class="field"><label>Phone reminder</label><select id="appointmentReminder"><option value="-1">No reminder</option><option value="0">At appointment time</option><option value="60">1 hour before</option><option value="120">2 hours before</option><option value="1440" selected>1 day before</option><option value="2880">2 days before</option><option value="10080">1 week before</option></select></div><div class="field"><label>Second reminder</label><select id="appointmentReminder2"><option value="-1">None</option><option value="0">At appointment time</option><option value="60">1 hour before</option><option value="120" selected>2 hours before</option><option value="1440">1 day before</option></select></div></div><div class="field"><label>Questions / notes</label><textarea id="appointmentNotes"></textarea></div><div class="button-row"><button type="button" class="secondary" data-close="appointmentDialog">Cancel</button><button class="add-btn" type="submit">Save appointment</button></div></form></div></dialog>
 
-<!-- LOG BUTTON -->
-<div class="log-zone">
-  <button id="log-now-btn" aria-label="Log a seizure now with the current time">
-    <span class="log-btn-icon" aria-hidden="true">⚡</span>
-    Log Seizure
-  </button>
-  <div class="log-hint">Press once — saved instantly. Add duration, type &amp; triggers after.</div>
-</div>
+<dialog id="pairDialog"><div class="dialog-body"><div class="dialog-head"><h2>Linking two phones</h2><button class="close" data-close="pairDialog">×</button></div><p>The shared version will use one private epilepsy profile in the cloud while each person keeps their own login.</p><ol><li>The owner chooses <b>Add caregiver</b>.</li><li>The app creates a short-lived pairing code or QR code.</li><li>The caregiver joins and the owner approves access.</li><li>Both phones then receive the same seizure, aura, medication and appointment updates.</li><li>Offline entries stay local and sync when internet returns.</li></ol><div class="alert">This build stores <b>who logged each event</b> and is structured for shared records, but it deliberately does not claim live sync until the secure cloud backend is added.</div><div class="button-row"><button class="add-btn" type="button" data-close="pairDialog">OK</button></div></div></dialog>
 
-<!-- DATA SOURCE STATUS -->
-<div class="data-source-status" id="data-source-status" role="status">
-  <span id="data-source-text">📁 No data file selected</span>
-  <button id="change-data-file-btn" aria-label="Change data file">Change file</button>
-</div>
+<dialog id="shareWarningDialog"><div class="dialog-body"><div class="dialog-head"><h2>Before you export or share</h2><button class="close" data-close="shareWarningDialog">×</button></div><div class="sensitive"><b>This may contain sensitive health information.</b><br>Check the person, date range, medication, event details and any diary entries before continuing. Once a file, PDF or printout leaves this app, the app cannot control who sees, stores or forwards it.</div><div class="button-row"><button class="secondary" type="button" data-close="shareWarningDialog">Cancel</button><button class="add-btn" id="shareWarningContinue" type="button">Continue</button></div></div></dialog>
 
-<!-- TABS -->
-<div class="tabs" role="tablist" aria-label="App sections">
-  <button class="tab-btn active" data-tab="seizure" role="tab" aria-selected="true" aria-controls="seizure-tab" id="tab-seizure">⚡ Log</button>
-  <button class="tab-btn" data-tab="meds" role="tab" aria-selected="false" aria-controls="meds-tab" id="tab-meds">💊 Meds</button>
-  <button class="tab-btn" data-tab="triggers" role="tab" aria-selected="false" aria-controls="triggers-tab" id="tab-triggers">🎯 Triggers</button>
-  <button class="tab-btn" data-tab="charts" role="tab" aria-selected="false" aria-controls="charts-tab" id="tab-charts">📊 Charts</button>
-  <button class="tab-btn" data-tab="more" role="tab" aria-selected="false" aria-controls="more-tab" id="tab-more">⋯ More</button>
-</div>
+<dialog id="legalConsentDialog"><div class="dialog-body"><div class="dialog-head"><h2>Before you use Untold Seizure Log</h2></div><div class="alert warning"><b>Please read this first.</b> This app is a record and reminder tool. It is not an emergency service, seizure detector, diagnostic tool or substitute for medical advice.</div><details open><summary><b>Key terms</b></summary><ul class="legal-list"><li>Check important entries and reports for mistakes.</li><li>Medication notifications can fail because of phone settings, battery restrictions or software/device problems. Follow your prescribed plan, not the app alone.</li><li>The app does not automatically call emergency services or tell another person that a seizure has happened.</li><li>Reports and backups can contain sensitive health and diary information. Manual backup downloads are readable JSON and are not encrypted. Optional automatic cloud backup is encrypted on this device before upload.</li><li>Records are stored locally on this device. Optional encrypted cloud backup can be enabled separately; live caregiver syncing is not enabled in this version.</li></ul></details><details><summary><b>Medical disclaimer</b></summary><p class="subtle">General first-aid and organisational information can be incomplete or become outdated. For diagnosis, medication, rescue treatment, seizure safety and emergency thresholds, follow a qualified healthcare professional and your personal care plan.</p></details><details><summary><b>Privacy & sharing</b></summary><p class="subtle">Only share exports with people you intend to receive them. Once information is printed, emailed, uploaded, messaged or otherwise shared, Untold Seizure Log cannot control later copies.</p></details><label class="consent-check"><input type="checkbox" id="acceptTermsCheck"><span>I agree to the Terms & Conditions and understand the sharing/privacy warnings.</span></label><label class="consent-check"><input type="checkbox" id="acceptMedicalCheck"><span>I understand that Untold Seizure Log is not medical advice, an emergency service or a guarantee that reminders will occur.</span></label><div class="button-row"><button class="add-btn" id="acceptLegalBtn" type="button" disabled>Accept & continue</button></div><p class="meta">Terms version: 2 October 2026 · Contact: stephaadams92@gmail.com</p></div></dialog>
 
-<!-- ═══ TAB: SEIZURE LOG ═══ -->
-<div id="seizure-tab" class="tab-content active" role="tabpanel" aria-labelledby="tab-seizure">
-  <div class="stats-row" id="stats-row" aria-label="Seizure statistics"></div>
+<script>
+(()=>{
+'use strict';
+const DB_KEY='untoldSeizureLog_v1';
+const LEGAL_VERSION='2026-10-02-v2';
+const PAYPAL_URL='https://paypal.me/stephndave';
+const CONTACT_EMAIL='stephaadams92@gmail.com';
+const defaults={version:4,profile:{name:'',carePlan:'',emergencyContact:'',emergencyNumber:'',legalAcceptedVersion:'',legalAcceptedAt:null,auraChoices:['Déjà vu','Jamais vu','Rising stomach sensation','Smell or taste','Visual change','Hearing change','Dizziness','Tingling','Fear','Nausea','Temperature / shivering','Speech change','Memory change'],typeChoices:['Seizure','Aura','Possible seizure','Cluster','Recovery issue','Other'],diaryCategories:['Thoughts','Feelings','Worries','Research','Awareness','Appointment notes','Questions','Recovery','Other']},shared:{userName:'',role:'owner'},events:[],journalEntries:[],medications:[],medLog:[],medicationHistory:[],appointments:[],trash:[]};
+let state=load();let timerStart=null,timerTick=null;
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function id(){return crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)}
+function esc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function nowParts(d=new Date()){return{date:[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'),time:String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}}
+function stamp(e){return new Date((e.date||'1970-01-01')+'T'+(e.time||'00:00')).getTime()}
+function prettyDate(date,time=''){if(!date)return'';const d=new Date(date+'T'+(time||'00:00'));return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})+(time?' · '+time:'')}
+function cap(s){return s?String(s).charAt(0).toUpperCase()+String(s).slice(1):''}
+function displayTime(t){if(!t)return'';const [h,m]=t.split(':').map(Number);const d=new Date();d.setHours(h,m,0,0);return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}
+function migrate(raw){const s=Object.assign(clone(defaults),raw||{});s.profile=Object.assign(clone(defaults.profile),raw?.profile||{});s.profile.auraChoices=Array.isArray(s.profile.auraChoices)?s.profile.auraChoices:clone(defaults.profile.auraChoices);s.profile.typeChoices=Array.isArray(s.profile.typeChoices)?s.profile.typeChoices:clone(defaults.profile.typeChoices);s.profile.diaryCategories=Array.isArray(s.profile.diaryCategories)?s.profile.diaryCategories:clone(defaults.profile.diaryCategories);s.shared=Object.assign(clone(defaults.shared),raw?.shared||{});s.events=Array.isArray(raw?.events)?raw.events:[];s.journalEntries=Array.isArray(raw?.journalEntries)?raw.journalEntries:[];s.medications=Array.isArray(raw?.medications)?raw.medications.map(m=>{if(Array.isArray(m.doses))return m;const times=Array.isArray(m.times)?m.times:[];return{...m,form:'',startDate:'',stock:'',doses:times.map((time,i)=>({id:(m.id||'med')+'-dose-'+i,time,amount:m.dose||''}))}}):[];s.medLog=Array.isArray(raw?.medLog)?raw.medLog:[];s.medicationHistory=Array.isArray(raw?.medicationHistory)?raw.medicationHistory:[];s.appointments=Array.isArray(raw?.appointments)?raw.appointments:[];s.trash=Array.isArray(raw?.trash)?raw.trash:[];s.version=4;return s}
+function load(){try{return migrate(JSON.parse(localStorage.getItem(DB_KEY)))}catch(e){return clone(defaults)}}
+function save(){localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}}
+function actor(){return state.shared.userName||state.profile.name||'Me'}
+function toast(msg,undo){const box=document.getElementById('toast');box.innerHTML='<span>'+esc(msg)+'</span>';if(undo){const b=document.createElement('button');b.textContent='Undo';b.onclick=()=>{undo();box.classList.add('hidden')};box.appendChild(b)}box.classList.remove('hidden');clearTimeout(box._t);box._t=setTimeout(()=>box.classList.add('hidden'),7000)}
+function go(screen){document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.dataset.screen===screen));document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('active',x.dataset.go===screen));window.scrollTo({top:0,behavior:'smooth'})}
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>document.getElementById(b.dataset.close).close()));
 
-  <div class="card-box" id="heatmap-box">
-    <div class="card-box-title">📅 Activity Heatmap <span class="box-sub">(last 12 weeks)</span></div>
-    <div id="heatmap-grid" class="heatmap-grid" role="img" aria-label="Seizure frequency heatmap by day"></div>
-    <div class="heatmap-legend" aria-hidden="true">
-      <span>Less</span>
-      <span class="heatmap-swatch h0"></span><span class="heatmap-swatch h1"></span>
-      <span class="heatmap-swatch h2"></span><span class="heatmap-swatch h3"></span>
-      <span class="heatmap-swatch h4"></span>
-      <span>More</span>
-    </div>
-  </div>
+function quickEvent(type,label){const n=nowParts();const e={id:id(),type,date:n.date,time:n.time,subtype:'',duration:'',sleep:'',aura:'',awareness:false,incontinence:false,injury:false,rescue:false,trigger:'',ownNotes:'',witnessNotes:'',recovery:'',loggedBy:actor(),needsDetails:true,createdAt:Date.now()};state.events.push(e);save();toast(label+' logged at '+displayTime(n.time),()=>{state.events=state.events.filter(x=>x.id!==e.id);save()});return e}
+document.getElementById('quickSeizure').onclick=()=>quickEvent('seizure','Seizure');document.getElementById('quickAura').onclick=()=>quickEvent('aura','Aura');document.getElementById('otherEventBtn').onclick=()=>openEvent();document.getElementById('quickFirstAid').onclick=()=>go('care');
+document.getElementById('timerBtn').onclick=()=>{const b=document.getElementById('timerBtn');if(!timerStart){timerStart=Date.now();b.classList.add('timer-active');b.textContent='■ Stop 00:00';timerTick=setInterval(()=>{const s=Math.floor((Date.now()-timerStart)/1000);b.textContent='■ Stop '+String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')},1000)}else{const seconds=Math.max(1,Math.round((Date.now()-timerStart)/1000));clearInterval(timerTick);timerTick=null;timerStart=null;b.classList.remove('timer-active');b.textContent='⏱ Start timer';const e=quickEvent('seizure','Timed seizure');e.duration=seconds<60?seconds+' sec':Math.floor(seconds/60)+' min '+(seconds%60)+' sec';save();openEvent(e.id)}};
 
-  <div class="section-title">
-    <span>Records</span>
-    <select id="filter-month" class="filter-select" aria-label="Filter records by month">
-      <option value="all">All time</option>
-    </select>
-  </div>
-  <div id="seizure-log-list" aria-label="Seizure log records">
-    <div class="no-records">No seizures logged yet.<br>Press the button above when one happens.</div>
-  </div>
+function todayMedicationRows(){const today=nowParts().date;const rows=[];for(const med of state.medications){for(const dose of med.doses||[]){const log=[...state.medLog].reverse().find(l=>l.medId===med.id&&l.doseId===dose.id&&l.scheduledDate===today);rows.push({med,dose,log})}}return rows.sort((a,b)=>a.dose.time.localeCompare(b.dose.time))}
+function renderToday(){const rows=todayMedicationRows();if(!rows.length){document.getElementById('todaySchedule').innerHTML='<div class="empty">No medication times added yet.</div>';return}const n=nowParts();document.getElementById('todaySchedule').innerHTML=rows.map(r=>{let status='Due',cls='';if(r.log){status=r.log.status;cls=r.log.status==='Taken'?'taken':'missed'}else if(r.dose.time<n.time){status='Overdue';cls='overdue'}return `<div class="today-row"><div class="time-big">${esc(displayTime(r.dose.time))}</div><div><strong>${esc(r.med.name)} ${esc(r.med.strength)}</strong><div class="meta">${esc(r.dose.amount||'Dose not entered')}</div><div class="status-dot ${cls}">${esc(status)}</div></div>${!r.log?`<button class="mini" data-take-med="${esc(r.med.id)}" data-dose-id="${esc(r.dose.id)}">Taken</button>`:''}</div>`}).join('')}
+function renderHome(){const se=state.events.filter(e=>e.type==='seizure'&&!e.deletedAt),now=Date.now(),day=86400000,today=nowParts().date;document.getElementById('todayCount').textContent=se.filter(e=>e.date===today).length;document.getElementById('weekCount').textContent=se.filter(e=>now-stamp(e)<7*day&&stamp(e)<=now).length;document.getElementById('monthCount').textContent=se.filter(e=>now-stamp(e)<30*day&&stamp(e)<=now).length;renderToday();const ap=state.appointments.filter(a=>new Date(a.date+'T'+(a.time||'23:59')).getTime()>=Date.now()-3600000).sort((a,b)=>new Date(a.date+'T'+(a.time||'23:59'))-new Date(b.date+'T'+(b.time||'23:59')))[0];document.getElementById('nextAppointment').innerHTML=ap?`<strong>${esc(ap.title)}</strong><div class="meta">${esc(prettyDate(ap.date,ap.time))}${ap.location?' · '+esc(ap.location):''}</div>`:'<div class="empty">No upcoming appointment.</div>';const recent=[...state.events].filter(e=>!e.deletedAt).sort((a,b)=>stamp(b)-stamp(a))[0];document.getElementById('recentEvent').innerHTML=recent?`<div class="row"><div class="grow"><strong>${esc(cap(recent.type))}${recent.subtype?' — '+esc(recent.subtype):''}</strong><div class="meta">${esc(prettyDate(recent.date,recent.time))} · Logged by ${esc(recent.loggedBy||'Me')}</div>${recent.needsDetails?'<span class="tag warn">Details to complete</span>':''}</div><button class="mini" data-edit-event="${esc(recent.id)}">Edit</button></div>`:'<div class="empty">Nothing logged yet.</div>'}
 
-  <div class="card-box" style="margin-top:16px">
-    <div class="card-box-title">💾 Permanent Storage <span class="box-sub">(immune to browser clear)</span></div>
-    <p class="box-desc">Pick a file on your device — data saves directly to it, surviving browser clears.</p>
-    <div class="btn-group">
-      <button class="primary-btn" id="pick-data-file-btn" style="background:var(--blue)">📂 Open data file</button>
-      <button class="primary-btn" id="create-new-data-file-btn" style="background:#2e7d32">✨ Create new file</button>
-    </div>
-    <div class="btn-group" style="margin-top:8px">
-      <button class="primary-btn" id="export-current-to-file-btn" style="background:#6a1b9a">💿 Export backup to file</button>
-    </div>
-  </div>
+function typeOptions(){const base=state.profile.typeChoices||[];const known={'Seizure':'seizure','Aura':'aura','Possible seizure':'possible','Cluster':'cluster','Recovery issue':'recovery','Other':'other'};return base.map(x=>`<option value="${esc(known[x]||x.toLowerCase().replace(/\s+/g,'-'))}">${esc(x)}</option>`).join('')}
+function renderEvents(){const f=document.getElementById('eventFilter').value;const arr=[...state.events].filter(e=>!e.deletedAt&&(f==='all'||e.type===f)).sort((a,b)=>stamp(b)-stamp(a));document.getElementById('eventList').innerHTML=arr.length?arr.map(e=>`<div class="event"><div class="row"><div class="grow"><strong>${esc(cap(e.type))}${e.subtype?' — '+esc(e.subtype):''}</strong><div class="meta">${esc(prettyDate(e.date,e.time))}${e.duration?' · '+esc(e.duration):''}</div><span class="tag">${esc(e.loggedBy||'Me')}</span>${e.needsDetails?'<span class="tag warn">Details to complete</span>':''}</div><div class="event-actions"><button class="mini" data-edit-event="${esc(e.id)}">Edit</button><button class="mini danger" data-delete-event="${esc(e.id)}">Delete</button></div></div></div>`).join(''):'<div class="empty">No events here yet.</div>'}
+document.getElementById('eventFilter').onchange=renderEvents;document.getElementById('addEventBtn').onclick=()=>openEvent();
+function openEvent(eid){const e=eid?state.events.find(x=>x.id===eid):null,n=nowParts();document.getElementById('eventId').value=e?.id||'';document.getElementById('eventType').innerHTML=typeOptions();document.getElementById('eventType').value=e?.type||'seizure';document.getElementById('eventSubtype').value=e?.subtype||'';document.getElementById('eventDate').value=e?.date||n.date;document.getElementById('eventTime').value=e?.time||n.time;document.getElementById('eventDuration').value=e?.duration||'';document.getElementById('eventSleep').value=e?.sleep||'';document.getElementById('eventAura').value=e?.aura||'';document.getElementById('eventAwareness').checked=!!e?.awareness;document.getElementById('eventIncontinence').checked=!!e?.incontinence;document.getElementById('eventInjury').checked=!!e?.injury;document.getElementById('eventRescue').checked=!!e?.rescue;document.getElementById('eventTrigger').value=e?.trigger||'';document.getElementById('eventOwnNotes').value=e?.ownNotes||'';document.getElementById('eventWitnessNotes').value=e?.witnessNotes||'';document.getElementById('eventRecovery').value=e?.recovery||'';document.getElementById('eventLoggedBy').value=e?.loggedBy||actor();document.getElementById('auraList').innerHTML=(state.profile.auraChoices||[]).map(x=>`<option value="${esc(x)}"></option>`).join('');document.getElementById('eventDialog').showModal()}
+document.getElementById('eventForm').onsubmit=e=>{e.preventDefault();const eid=document.getElementById('eventId').value,old=state.events.find(x=>x.id===eid);const item={id:eid||id(),type:document.getElementById('eventType').value,date:document.getElementById('eventDate').value,time:document.getElementById('eventTime').value,subtype:document.getElementById('eventSubtype').value.trim(),duration:document.getElementById('eventDuration').value.trim(),sleep:document.getElementById('eventSleep').value,aura:document.getElementById('eventAura').value.trim(),awareness:document.getElementById('eventAwareness').checked,incontinence:document.getElementById('eventIncontinence').checked,injury:document.getElementById('eventInjury').checked,rescue:document.getElementById('eventRescue').checked,trigger:document.getElementById('eventTrigger').value.trim(),ownNotes:document.getElementById('eventOwnNotes').value.trim(),witnessNotes:document.getElementById('eventWitnessNotes').value.trim(),recovery:document.getElementById('eventRecovery').value.trim(),loggedBy:document.getElementById('eventLoggedBy').value.trim()||actor(),needsDetails:false,createdAt:old?.createdAt||Date.now(),updatedAt:Date.now()};state.events=eid?state.events.map(x=>x.id===eid?item:x):[...state.events,item];save();document.getElementById('eventDialog').close();toast('Event saved')};
+function deleteEvent(eid){const x=state.events.find(e=>e.id===eid);if(!x||!confirm('Delete this event?'))return;state.trash.push({...x,deletedAt:Date.now(),trashType:'event'});state.events=state.events.filter(e=>e.id!==eid);save()}
+function journalCategories(){const cats=state.profile.diaryCategories||defaults.profile.diaryCategories;return cats.length?cats:defaults.profile.diaryCategories}
+function journalCategoryOptions(selected=''){return journalCategories().map(x=>`<option value="${esc(x)}"${x===selected?' selected':''}>${esc(x)}</option>`).join('')}
+function journalLinkOptions(selected=''){const opts=['<option value="">No link</option>'];const events=[...state.events].filter(e=>!e.deletedAt).sort((a,b)=>stamp(b)-stamp(a)).slice(0,50);for(const e of events){const v='event:'+e.id,label=`Event · ${cap(e.type)} · ${prettyDate(e.date,e.time)}`;opts.push(`<option value="${esc(v)}"${v===selected?' selected':''}>${esc(label)}</option>`)}for(const a of state.appointments){const v='appointment:'+a.id,label=`Appointment · ${a.title} · ${prettyDate(a.date,a.time)}`;opts.push(`<option value="${esc(v)}"${v===selected?' selected':''}>${esc(label)}</option>`)}for(const m of state.medications){const v='medication:'+m.id,label=`Medication · ${m.name} ${m.strength||''}`.trim();opts.push(`<option value="${esc(v)}"${v===selected?' selected':''}>${esc(label)}</option>`)}return opts.join('')}
+function journalLinkLabel(link){if(!link)return'';const [kind,jid]=String(link).split(':');if(kind==='event'){const e=state.events.find(x=>x.id===jid);return e?`${cap(e.type)} · ${prettyDate(e.date,e.time)}`:'Linked event'}if(kind==='appointment'){const a=state.appointments.find(x=>x.id===jid);return a?`${a.title} · ${prettyDate(a.date,a.time)}`:'Linked appointment'}if(kind==='medication'){const m=state.medications.find(x=>x.id===jid);return m?`${m.name} ${m.strength||''}`.trim():'Linked medication'}return'Linked item'}
+function renderJournal(){const search=(document.getElementById('journalSearch').value||'').trim().toLowerCase(),cat=document.getElementById('journalCategoryFilter').value||'all',cats=journalCategories();const filter=document.getElementById('journalCategoryFilter'),current=filter.value||'all';filter.innerHTML='<option value="all">All categories</option>'+cats.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');filter.value=cats.includes(current)||current==='all'?current:'all';const arr=[...state.journalEntries].filter(j=>!j.deletedAt&&(filter.value==='all'||j.category===filter.value)&&(!search||[j.title,j.text,j.category,j.mood,journalLinkLabel(j.link)].join(' ').toLowerCase().includes(search))).sort((a,b)=>stamp(b)-stamp(a));document.getElementById('journalList').innerHTML=arr.length?arr.map(j=>`<div class="journal-entry"><div class="row"><div class="grow"><strong>${esc(j.title||j.category||'Diary entry')}</strong><div class="meta">${esc(prettyDate(j.date,j.time))} · ${esc(j.category||'Diary')}${j.mood?' · '+esc(j.mood):''}</div>${j.private?'<span class="tag">Private</span>':''}${j.includeInReport?'<span class="tag ok">Allowed in reports</span>':''}${j.link?'<span class="tag">Linked: '+esc(journalLinkLabel(j.link))+'</span>':''}</div><div class="event-actions"><button class="mini" data-edit-journal="${esc(j.id)}">Edit</button><button class="mini danger" data-delete-journal="${esc(j.id)}">Delete</button></div></div><div class="journal-body">${esc(j.text)}</div></div>`).join(''):'<div class="empty">No diary entries match this view.</div>'}
+function openJournal(jid){const j=jid?state.journalEntries.find(x=>x.id===jid):null,n=nowParts();document.getElementById('journalId').value=j?.id||'';document.getElementById('journalDialogTitle').textContent=j?'Edit diary entry':'New diary entry';document.getElementById('journalTitle').value=j?.title||'';document.getElementById('journalCategory').innerHTML=journalCategoryOptions(j?.category||journalCategories()[0]||'Other');document.getElementById('journalMood').value=j?.mood||'';document.getElementById('journalDate').value=j?.date||n.date;document.getElementById('journalTime').value=j?.time||n.time;document.getElementById('journalText').value=j?.text||'';document.getElementById('journalLink').innerHTML=journalLinkOptions(j?.link||'');document.getElementById('journalPrivate').checked=j?j.private!==false:true;document.getElementById('journalIncludeReport').checked=!!j?.includeInReport;document.getElementById('journalDialog').showModal()}
+document.getElementById('addJournalBtn').onclick=()=>openJournal();document.getElementById('journalSearch').oninput=renderJournal;document.getElementById('journalCategoryFilter').onchange=renderJournal;
+document.getElementById('journalForm').onsubmit=e=>{e.preventDefault();const jid=document.getElementById('journalId').value,old=state.journalEntries.find(x=>x.id===jid),item={id:jid||id(),title:document.getElementById('journalTitle').value.trim(),category:document.getElementById('journalCategory').value,mood:document.getElementById('journalMood').value.trim(),date:document.getElementById('journalDate').value,time:document.getElementById('journalTime').value,text:document.getElementById('journalText').value.trim(),link:document.getElementById('journalLink').value,private:document.getElementById('journalPrivate').checked,includeInReport:document.getElementById('journalIncludeReport').checked,createdAt:old?.createdAt||Date.now(),updatedAt:Date.now(),writtenBy:old?.writtenBy||actor()};state.journalEntries=jid?state.journalEntries.map(x=>x.id===jid?item:x):[...state.journalEntries,item];save();document.getElementById('journalDialog').close();toast('Diary entry saved')};
+function deleteJournal(jid){const j=state.journalEntries.find(x=>x.id===jid);if(!j||!confirm('Delete this diary entry?'))return;state.trash.push({...j,deletedAt:Date.now(),trashType:'journal'});state.journalEntries=state.journalEntries.filter(x=>x.id!==jid);save()}
 
-  <div class="privacy-card" role="note" aria-label="Privacy statement">
-    <span class="privacy-icon" aria-hidden="true">🔒</span>
-    <div>
-      <strong>Privacy Statement</strong><br>
-      <small>Data is stored exclusively on this device. Nothing is transmitted to any server. No analytics. No cloud. No accounts. Ever.</small>
-    </div>
-  </div>
-</div>
 
-<!-- ═══ TAB: MEDICATIONS ═══ -->
-<div id="meds-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-meds">
-  <div class="section-title">
-    <span>Your Medications</span>
-    <button class="add-btn" id="add-med-btn" aria-label="Add a new medication">+ Add</button>
-  </div>
+function addDoseRow(dose={id:id(),time:'',amount:''}){const host=document.getElementById('doseRows'),row=document.createElement('div');row.className='dose-row';row.dataset.doseId=dose.id;row.innerHTML=`<div class="field"><label>Time</label><input type="time" class="dose-time" required value="${esc(dose.time)}"></div><div class="field"><label>Amount / dose</label><input class="dose-amount" placeholder="e.g. 1 capsule" value="${esc(dose.amount||'')}"></div><button type="button" class="dose-remove" aria-label="Remove dose time">×</button>`;row.querySelector('.dose-remove').onclick=()=>{if(host.children.length>1)row.remove();else toast('Keep at least one dose time')};host.appendChild(row)}
+document.getElementById('addDoseTime').onclick=()=>addDoseRow();document.getElementById('addMedicationBtn').onclick=()=>openMed();
+function openMed(mid){const m=mid?state.medications.find(x=>x.id===mid):null;document.getElementById('medId').value=m?.id||'';document.getElementById('medName').value=m?.name||'';document.getElementById('medStrength').value=m?.strength||'';document.getElementById('medFormType').value=m?.form||'';document.getElementById('medStartDate').value=m?.startDate||'';document.getElementById('medStock').value=m?.stock??'';document.getElementById('medNotes').value=m?.notes||'';document.getElementById('doseRows').innerHTML='';const doses=m?.doses?.length?m.doses:[{id:id(),time:'',amount:''}];doses.forEach(addDoseRow);document.getElementById('medDialog').showModal()}
+function medicationDoseText(m,d){return [d.amount,m.strength].filter(Boolean).join(' · ')||'Dose not entered'}
+function renderMedications(){document.getElementById('medicationList').innerHTML=state.medications.length?state.medications.map(m=>`<div class="event"><div class="row"><div class="grow"><strong>${esc(m.name)} ${esc(m.strength)}</strong><div class="meta">${esc(m.form||'')}${m.startDate?' · from '+esc(prettyDate(m.startDate)):''}</div>${(m.doses||[]).map(d=>`<div><span class="tag">${esc(displayTime(d.time))}</span> ${esc(d.amount||'Dose not entered')}</div>`).join('')}${m.notes?'<div class="meta">'+esc(m.notes)+'</div>':''}${m.stock!==''&&m.stock!=null?'<div class="meta">Stock recorded: '+esc(m.stock)+'</div>':''}</div><div class="event-actions"><button class="mini" data-edit-med="${esc(m.id)}">Edit</button><button class="mini danger" data-delete-med="${esc(m.id)}">Delete</button></div></div></div>`).join(''):'<div class="empty">No medication added.</div>';const logs=[...state.medLog].sort((a,b)=>b.at-a.at).slice(0,30);document.getElementById('medLog').innerHTML=logs.length?logs.map(l=>`<div class="event"><strong>${esc(l.name)} — ${esc(l.status)}</strong><div class="meta">${new Date(l.at).toLocaleString()}${l.scheduledTime?' · scheduled '+esc(displayTime(l.scheduledTime)):''}${l.loggedBy?' · '+esc(l.loggedBy):''}</div></div>`).join(''):'<div class="empty">No medication records yet.</div>';const hist=[...state.medicationHistory].sort((a,b)=>b.at-a.at).slice(0,20);document.getElementById('medHistory').innerHTML=hist.length?hist.map(h=>`<div class="event"><strong>${esc(h.name)} — ${esc(h.change)}</strong><div class="meta">${new Date(h.at).toLocaleString()} · ${esc(h.changedBy||'Me')}</div></div>`).join(''):'<div class="empty">No medication changes recorded yet.</div>'}
+document.getElementById('medForm').onsubmit=e=>{e.preventDefault();const mid=document.getElementById('medId').value,old=state.medications.find(x=>x.id===mid);const doses=[...document.querySelectorAll('#doseRows .dose-row')].map(row=>({id:row.dataset.doseId||id(),time:row.querySelector('.dose-time').value,amount:row.querySelector('.dose-amount').value.trim()})).filter(d=>d.time);if(!doses.length){toast('Add at least one medication time');return}const m={id:mid||id(),name:document.getElementById('medName').value.trim(),strength:document.getElementById('medStrength').value.trim(),form:document.getElementById('medFormType').value,startDate:document.getElementById('medStartDate').value,stock:document.getElementById('medStock').value,notes:document.getElementById('medNotes').value.trim(),doses,updatedAt:Date.now()};if(old)state.medicationHistory.push({id:id(),medId:old.id,name:old.name,change:'Dose / schedule edited',at:Date.now(),changedBy:actor(),snapshot:old});else state.medicationHistory.push({id:id(),medId:m.id,name:m.name,change:'Medication added',at:Date.now(),changedBy:actor(),snapshot:m});state.medications=mid?state.medications.map(x=>x.id===mid?m:x):[...state.medications,m];save();syncNativeSchedules();document.getElementById('medDialog').close();toast('Medication saved and reminders updated')};
+function deleteMed(mid){const m=state.medications.find(x=>x.id===mid);if(!m||!confirm('Delete '+m.name+'?'))return;state.medicationHistory.push({id:id(),medId:m.id,name:m.name,change:'Medication removed',at:Date.now(),changedBy:actor(),snapshot:m});state.trash.push({...m,deletedAt:Date.now(),trashType:'medication'});state.medications=state.medications.filter(x=>x.id!==mid);save();syncNativeSchedules()}
+function takeMedication(mid,doseId,status='Taken',at=Date.now(),scheduledDate=nowParts().date,source='app'){const m=state.medications.find(x=>x.id===mid),d=m?.doses?.find(x=>x.id===doseId);if(!m||!d)return;const existing=state.medLog.find(l=>l.medId===mid&&l.doseId===doseId&&l.scheduledDate===scheduledDate&&l.status===status);if(existing)return;state.medLog.push({id:id(),medId:mid,doseId,name:(m.name+' '+m.strength).trim(),dose:d.amount,status,scheduledTime:d.time,scheduledDate,at,loggedBy:source==='native'?'Phone reminder':actor(),source});if(source!=='native'){try{AndroidBridge.dismissMedicationNotification(mid,doseId)}catch(e){}}save();toast(m.name+' marked '+status.toLowerCase())}
 
-  <div id="adherence-summary" class="adherence-summary" hidden>
-    <div class="adherence-title">Today's Doses</div>
-    <div id="adherence-pills" class="adherence-pills"></div>
-  </div>
+function renderAppointments(){const arr=[...state.appointments].sort((a,b)=>new Date(a.date+'T'+(a.time||'23:59'))-new Date(b.date+'T'+(b.time||'23:59')));document.getElementById('appointmentList').innerHTML=arr.length?arr.map(a=>`<div class="event"><div class="row"><div class="grow"><strong>${esc(a.title)}</strong><div class="meta">${esc(prettyDate(a.date,a.time))}${a.location?' · '+esc(a.location):''}</div><div class="meta">${a.reminderMinutes>=0?'Reminder '+esc(reminderLabel(a.reminderMinutes)): 'No reminder'}${a.reminderMinutes2>=0?' · second '+esc(reminderLabel(a.reminderMinutes2)):''}</div></div><div class="event-actions"><button class="mini" data-edit-appt="${esc(a.id)}">Edit</button><button class="mini danger" data-delete-appt="${esc(a.id)}">Delete</button></div></div></div>`).join(''):'<div class="empty">No appointments.</div>'}
+function reminderLabel(v){v=Number(v);if(v===0)return'at appointment time';if(v===60)return'1 hour before';if(v===120)return'2 hours before';if(v===1440)return'1 day before';if(v===2880)return'2 days before';if(v===10080)return'1 week before';return v+' minutes before'}
+document.getElementById('addAppointmentBtn').onclick=()=>openAppointment();function openAppointment(aid){const a=aid?state.appointments.find(x=>x.id===aid):null,n=nowParts();document.getElementById('appointmentId').value=a?.id||'';document.getElementById('appointmentTitle').value=a?.title||'';document.getElementById('appointmentDate').value=a?.date||n.date;document.getElementById('appointmentTime').value=a?.time||'';document.getElementById('appointmentLocation').value=a?.location||'';document.getElementById('appointmentReminder').value=String(a?.reminderMinutes??1440);document.getElementById('appointmentReminder2').value=String(a?.reminderMinutes2??120);document.getElementById('appointmentNotes').value=a?.notes||'';document.getElementById('appointmentDialog').showModal()}
+document.getElementById('appointmentForm').onsubmit=e=>{e.preventDefault();const aid=document.getElementById('appointmentId').value;const a={id:aid||id(),title:document.getElementById('appointmentTitle').value.trim(),date:document.getElementById('appointmentDate').value,time:document.getElementById('appointmentTime').value,location:document.getElementById('appointmentLocation').value.trim(),notes:document.getElementById('appointmentNotes').value.trim(),reminderMinutes:Number(document.getElementById('appointmentReminder').value),reminderMinutes2:Number(document.getElementById('appointmentReminder2').value)};state.appointments=aid?state.appointments.map(x=>x.id===aid?a:x):[...state.appointments,a];save();syncNativeSchedules();document.getElementById('appointmentDialog').close();toast('Appointment saved and reminder updated')};function deleteAppointment(aid){const a=state.appointments.find(x=>x.id===aid);if(!a||!confirm('Delete this appointment?'))return;state.trash.push({...a,deletedAt:Date.now(),trashType:'appointment'});state.appointments=state.appointments.filter(x=>x.id!==aid);save();syncNativeSchedules()}
 
-  <div id="medications-list" aria-label="Medications list"></div>
+function renderCare(){document.getElementById('carePlan').value=state.profile.carePlan||'';document.getElementById('emergencyContact').value=state.profile.emergencyContact||'';document.getElementById('emergencyNumber').value=state.profile.emergencyNumber||'';document.getElementById('ownerLabel').textContent=state.profile.name||'Profile owner';document.getElementById('deviceUserLabel').textContent=(state.shared.userName||'This device')+' · '+cap(state.shared.role||'owner')}
+document.getElementById('saveCare').onclick=()=>{state.profile.carePlan=document.getElementById('carePlan').value.trim();state.profile.emergencyContact=document.getElementById('emergencyContact').value.trim();state.profile.emergencyNumber=document.getElementById('emergencyNumber').value.trim();save();toast('Care plan saved')};document.getElementById('pairInfoBtn').onclick=()=>document.getElementById('pairDialog').showModal();
+function renderSettings(){document.getElementById('profileName').value=state.profile.name||'';document.getElementById('deviceUserName').value=state.shared.userName||'';document.getElementById('deviceRole').value=state.shared.role||'owner';document.getElementById('auraChoices').value=(state.profile.auraChoices||[]).join('\n');document.getElementById('typeChoices').value=(state.profile.typeChoices||[]).join('\n');document.getElementById('diaryCategories').value=(state.profile.diaryCategories||[]).join('\n')}
+document.getElementById('saveSettings').onclick=()=>{state.profile.name=document.getElementById('profileName').value.trim();state.shared.userName=document.getElementById('deviceUserName').value.trim();state.shared.role=document.getElementById('deviceRole').value;state.profile.auraChoices=document.getElementById('auraChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.typeChoices=document.getElementById('typeChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.diaryCategories=document.getElementById('diaryCategories').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);save();toast('Settings saved')};document.getElementById('pinSeizureShortcut').onclick=()=>{try{const ok=AndroidBridge.pinSeizureShortcut();toast(ok?'Home-screen shortcut request opened':'This launcher does not support pinned shortcuts')}catch(e){toast('Install the Android app to add the home-screen shortcut')}};function openExternal(url){try{if(window.AndroidBridge?.openExternalUrl){AndroidBridge.openExternalUrl(url);return}}catch(e){}if(url.startsWith('mailto:'))location.href=url;else window.open(url,'_blank')}document.getElementById('supportBtn').onclick=()=>openExternal(PAYPAL_URL);document.getElementById('legalSupportBtn').onclick=()=>openExternal(PAYPAL_URL);document.getElementById('contactBtn').onclick=()=>openExternal('mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent('Untold Seizure Log'));document.getElementById('legalContactBtn').onclick=()=>openExternal('mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent('Untold Seizure Log'));
 
-  <div class="section-title" style="margin-top:18px">
-    <span>📋 Dose History</span>
-    <select id="dose-history-med-select" class="filter-select" aria-label="Select medication to view history" style="font-size:0.8rem"></select>
-  </div>
-  <div id="dose-history-list" aria-label="Medication dose history"></div>
+function renderTrash(){const cutoff=Date.now()-30*86400000;state.trash=state.trash.filter(x=>(x.deletedAt||0)>=cutoff);document.getElementById('trashList').innerHTML=state.trash.length?state.trash.map(x=>`<div class="event"><div class="row"><div class="grow"><strong>${esc(x.trashType==='event'?cap(x.type):x.trashType==='journal'?(x.title||x.category||'Diary entry'):(x.name||x.title||x.trashType))}</strong><div class="meta">Deleted ${new Date(x.deletedAt).toLocaleDateString()}</div></div><button class="mini" data-restore="${esc(x.id)}">Restore</button><button class="mini danger" data-purge="${esc(x.id)}">Delete forever</button></div></div>`).join(''):'<div class="empty">Nothing recently deleted.</div>'}
+function restoreTrash(tid){const x=state.trash.find(v=>v.id===tid);if(!x)return;const clean={...x};delete clean.deletedAt;delete clean.trashType;if(x.trashType==='event')state.events.push(clean);if(x.trashType==='journal')state.journalEntries.push(clean);if(x.trashType==='medication')state.medications.push(clean);if(x.trashType==='appointment')state.appointments.push(clean);state.trash=state.trash.filter(v=>v.id!==tid);save();syncNativeSchedules();toast('Restored')}
+function purgeTrash(tid){if(!confirm('Permanently delete this item? This cannot be undone.'))return;state.trash=state.trash.filter(v=>v.id!==tid);save()}
 
-  <div class="section-title" style="margin-top:16px">
-    <span>Refill Reminders</span>
-    <button class="add-btn" id="add-refill-btn" aria-label="Add refill reminder">+ Add</button>
-  </div>
-  <div id="refill-list" aria-label="Refill reminders list"></div>
-</div>
+function defaultReportDates(){const now=new Date(),from=new Date();from.setDate(now.getDate()-30);const fmt=d=>nowParts(d).date;if(!document.getElementById('reportTo').value)document.getElementById('reportTo').value=fmt(now);if(!document.getElementById('reportFrom').value)document.getElementById('reportFrom').value=fmt(from)}
+function reportHTML(){const from=document.getElementById('reportFrom').value,to=document.getElementById('reportTo').value,ev=state.events.filter(e=>!e.deletedAt&&(!from||e.date>=from)&&(!to||e.date<=to)).sort((a,b)=>stamp(a)-stamp(b)),seizures=ev.filter(e=>e.type==='seizure').length,auras=ev.filter(e=>e.type==='aura').length,meds=document.getElementById('includeMeds').checked?state.medications:[],details=document.getElementById('includeNotes').checked,diary=document.getElementById('includeDiary').checked?state.journalEntries.filter(j=>j.includeInReport&&!j.deletedAt&&(!from||j.date>=from)&&(!to||j.date<=to)).sort((a,b)=>stamp(a)-stamp(b)):[];return `<h1>Seizure & Event Report</h1><div class="print-muted">${esc(state.profile.name||'Name not set')} · ${esc(from||'Start')} to ${esc(to||'Today')}</div><h2>Summary</h2><p><b>${seizures}</b> seizures · <b>${auras}</b> auras · <b>${ev.length}</b> total logged events</p>${meds.length?`<h2>Current medication</h2><ul>${meds.map(m=>`<li><b>${esc(m.name)} ${esc(m.strength)}</b>${(m.doses||[]).length?'<br>'+m.doses.map(d=>esc(displayTime(d.time))+' — '+esc(d.amount||'Dose not entered')).join('<br>'):''}</li>`).join('')}</ul>`:''}<h2>Logged events</h2>${ev.length?ev.map(e=>`<div class="no-break"><p><b>${esc(prettyDate(e.date,e.time))} — ${esc(cap(e.type))}${e.subtype?' — '+esc(e.subtype):''}</b>${e.duration?' · '+esc(e.duration):''}${e.loggedBy?' · Logged by '+esc(e.loggedBy):''}</p>${details?`<p>${e.aura?'<b>Aura:</b> '+esc(e.aura)+'<br>':''}${e.trigger?'<b>Possible trigger:</b> '+esc(e.trigger)+'<br>':''}${e.ownNotes?'<b>Own recollection:</b> '+esc(e.ownNotes)+'<br>':''}${e.witnessNotes?'<b>Witness:</b> '+esc(e.witnessNotes)+'<br>':''}${e.recovery?'<b>Recovery:</b> '+esc(e.recovery)+'<br>':''}${e.incontinence?'<b>Incontinence:</b> Yes<br>':''}${e.injury?'<b>Injury:</b> Yes<br>':''}${e.rescue?'<b>Rescue medication:</b> Used<br>':''}</p>`:''}</div>`).join(''):'<p>No events in this date range.</p>'}${diary.length?`<h2>Selected diary entries</h2>${diary.map(j=>`<div class="no-break"><p><b>${esc(prettyDate(j.date,j.time))} — ${esc(j.title||j.category||'Diary entry')}</b>${j.category?' · '+esc(j.category):''}${j.mood?' · '+esc(j.mood):''}</p><p>${esc(j.text).replace(/\n/g,'<br>')}</p></div>`).join('')}`:''}`}
+function previewReport(){document.getElementById('reportPreview').innerHTML=reportHTML()}document.getElementById('previewReportBtn').onclick=previewReport;let pendingSensitiveAction=null;function confirmSensitive(action){pendingSensitiveAction=action;document.getElementById('shareWarningDialog').showModal()}document.getElementById('shareWarningContinue').onclick=()=>{const fn=pendingSensitiveAction;pendingSensitiveAction=null;document.getElementById('shareWarningDialog').close();if(fn)fn()};document.getElementById('printReportBtn').onclick=()=>confirmSensitive(()=>{document.getElementById('print-report').innerHTML=reportHTML();if(window.AndroidBridge&&typeof AndroidBridge.printPage==='function')AndroidBridge.printPage();else window.print()});
+document.getElementById('backupBtn').onclick=()=>confirmSensitive(()=>{const json=JSON.stringify(state,null,2),filename='untold-seizure-log-backup-'+nowParts().date+'.json';if(window.AndroidBridge&&typeof AndroidBridge.saveBackup==='function'){AndroidBridge.saveBackup(json,filename);return}const blob=new Blob([json],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)});
+document.getElementById('restoreInput').onchange=async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!data||!Array.isArray(data.events)||!Array.isArray(data.medications))throw new Error('Invalid');if(!confirm('Replace this device\'s current data with the selected backup?'))return;state=migrate(data);save();syncNativeSchedules();toast('Backup restored')}catch(err){alert('That file does not look like an Untold Seizure Log backup.')}e.target.value=''};
 
-<!-- ═══ TAB: TRIGGERS ═══ -->
-<div id="triggers-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-triggers">
-  <div class="section-title"><span>Trigger &amp; Aura Log</span></div>
-  <p class="box-desc" style="margin-bottom:12px">Tag what happened before seizures to spot patterns.</p>
+function syncNativeSchedules(){try{if(window.AndroidBridge?.syncMedicationSchedule)AndroidBridge.syncMedicationSchedule(JSON.stringify(state.medications));if(window.AndroidBridge?.syncAppointmentSchedule)AndroidBridge.syncAppointmentSchedule(JSON.stringify(state.appointments))}catch(e){}}
+function reminderStatus(){try{return window.AndroidBridge?.getReminderStatus?JSON.parse(AndroidBridge.getReminderStatus()):null}catch(e){return null}}
+function renderReminderStatus(){const host=document.getElementById('reminderStatusCard'),s=reminderStatus();if(!s){host.innerHTML='<strong>Phone reminders</strong><div class="meta">Native Android reminders become available when this project is installed as the app.</div>';return}const ok=s.notifications&&s.exact;host.innerHTML=`<div class="row"><div class="grow"><strong>Phone reminder reliability</strong><div class="meta">Notifications: ${s.notifications?'allowed':'needs permission'} · Exact alarms: ${s.exact?'allowed':'needs permission'}</div></div><span class="tag ${ok?'ok':'warn'}">${ok?'Ready':'Check settings'}</span></div>${!ok?'<div class="button-row" style="justify-content:flex-start"><button class="secondary" id="enableReminderPermissions">Enable reminder permissions</button></div>':''}<div class="button-row" style="justify-content:flex-start"><button class="secondary" id="testReminderBtn">Test reminder</button></div>`;document.getElementById('enableReminderPermissions')?.addEventListener('click',()=>{try{AndroidBridge.requestReminderPermissions()}catch(e){}});document.getElementById('testReminderBtn')?.addEventListener('click',()=>{try{AndroidBridge.testMedicationReminder();toast('Test reminder scheduled for about 10 seconds from now')}catch(e){toast('Test reminders require the installed Android app')}})}
+function drainNativeActions(){try{if(!window.AndroidBridge?.drainMedicationActions)return;const actions=JSON.parse(AndroidBridge.drainMedicationActions()||'[]');let changed=false;for(const a of actions){if(state.medLog.some(x=>x.nativeActionId===a.actionId))continue;const med=state.medications.find(m=>m.id===a.medId),dose=med?.doses?.find(d=>d.id===a.doseId);state.medLog.push({id:id(),nativeActionId:a.actionId,medId:a.medId,doseId:a.doseId,name:a.name||((med?.name||'Medication')+' '+(med?.strength||'')),dose:a.amount||dose?.amount||'',status:a.status,scheduledTime:a.scheduledTime||dose?.time||'',scheduledDate:a.scheduledDate||nowParts(new Date(a.at||Date.now())).date,at:Number(a.at)||Date.now(),loggedBy:'Phone reminder',source:'native'});changed=true}if(changed){localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll()}}catch(e){}}
+window.UntoldNative={refresh(){drainNativeActions();renderReminderStatus()}};window.UntoldApp={getState(){return clone(state)},replaceState(data){state=migrate(data);localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();syncNativeSchedules();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}},getVersion(){return state.version}};document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.UntoldNative.refresh()});
 
-  <div class="card-box">
-    <div class="card-box-title">Quick-log for a seizure</div>
-    <select id="trigger-seizure-select" class="filter-select" style="width:100%;margin-bottom:10px" aria-label="Select seizure to tag triggers">
-      <option value="">— Pick a seizure —</option>
-    </select>
-    <div class="form-group">
-      <label>Preset triggers (tap to toggle)</label>
-      <div id="trigger-preset-grid" class="trigger-chip-row" role="group" aria-label="Common seizure triggers"></div>
-    </div>
-    <div class="form-group">
-      <label for="trigger-custom-input">Custom trigger / aura</label>
-      <textarea id="trigger-custom-input" rows="2" placeholder="e.g. flickering lights, missed sleep…" aria-label="Custom trigger description"></textarea>
-    </div>
-    <div class="form-group">
-      <label for="aura-select">Aura type</label>
-      <select id="aura-select" aria-label="Aura type felt before seizure">
-        <option value="">None / not sure</option>
-        <option>Déjà vu</option>
-        <option>Tingling / numbness</option>
-        <option>Visual disturbance</option>
-        <option>Strange smell or taste</option>
-        <option>Rising feeling in stomach</option>
-        <option>Fear / anxiety wave</option>
-        <option>Confusion / brain fog</option>
-        <option>Hearing change / ringing</option>
-        <option>Other (describe above)</option>
-      </select>
-    </div>
-    <button class="primary-btn" id="save-triggers-btn" style="width:100%">💾 Save triggers</button>
-  </div>
+function setupLegalConsent(){const d=document.getElementById('legalConsentDialog'),a=document.getElementById('acceptTermsCheck'),b=document.getElementById('acceptMedicalCheck'),btn=document.getElementById('acceptLegalBtn');const refresh=()=>btn.disabled=!(a.checked&&b.checked);a.addEventListener('change',refresh);b.addEventListener('change',refresh);btn.addEventListener('click',()=>{if(!(a.checked&&b.checked))return;state.profile.legalAcceptedVersion=LEGAL_VERSION;state.profile.legalAcceptedAt=Date.now();save();d.close();toast('Terms accepted')});if(state.profile.legalAcceptedVersion!==LEGAL_VERSION)setTimeout(()=>d.showModal(),0)}
+function renderAll(){renderHome();renderEvents();renderJournal();renderMedications();renderAppointments();renderCare();renderSettings();renderTrash();renderReminderStatus();defaultReportDates()}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.editEvent)openEvent(b.dataset.editEvent);if(b.dataset.deleteEvent)deleteEvent(b.dataset.deleteEvent);if(b.dataset.editJournal)openJournal(b.dataset.editJournal);if(b.dataset.deleteJournal)deleteJournal(b.dataset.deleteJournal);if(b.dataset.editMed)openMed(b.dataset.editMed);if(b.dataset.deleteMed)deleteMed(b.dataset.deleteMed);if(b.dataset.takeMed)takeMedication(b.dataset.takeMed,b.dataset.doseId);if(b.dataset.editAppt)openAppointment(b.dataset.editAppt);if(b.dataset.deleteAppt)deleteAppointment(b.dataset.deleteAppt);if(b.dataset.restore)restoreTrash(b.dataset.restore);if(b.dataset.purge)purgeTrash(b.dataset.purge)});
+renderAll();drainNativeActions();syncNativeSchedules();setupLegalConsent();
+const action=new URLSearchParams(location.search).get('action');if(action==='seizure'){const key='shortcut_'+Math.floor(Date.now()/60000);if(sessionStorage.getItem('lastShortcut')!==key){sessionStorage.setItem('lastShortcut',key);quickEvent('seizure','Seizure')}}else if(action==='medication')go('medication');
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+})();
+</script>
+<script id="universal-js">
+(() => {
+  'use strict';
 
-  <div class="section-title" style="margin-top:16px"><span>Trigger Frequency</span></div>
-  <div id="trigger-freq-list" class="trigger-freq-list" aria-label="Trigger frequency list"></div>
-</div>
+  const CLOUD_KEY = 'untoldCloudBackup_v1';
+  const API_URL = '/api/backup';
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let installPrompt = null;
+  let backupTimer = null;
+  let backupBusy = false;
 
-<!-- ═══ TAB: CHARTS ═══ -->
-<div id="charts-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-charts">
-  <div class="section-title"><span>Data Visualisation</span></div>
+  const $ = (s, root = document) => root.querySelector(s);
+  const esc = (v) => String(v ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 
-  <div class="card-box">
-    <div class="card-box-title">📈 Monthly Trend</div>
-    <canvas id="trend-chart" height="180" role="img" aria-label="Monthly seizure trend bar chart"></canvas>
-  </div>
-  <div class="card-box" style="margin-top:12px">
-    <div class="card-box-title">🕐 Time-of-Day Distribution</div>
-    <canvas id="tod-chart" height="180" role="img" aria-label="Time of day seizure distribution chart"></canvas>
-  </div>
-  <div class="card-box" style="margin-top:12px">
-    <div class="card-box-title">🔗 Trigger Correlation</div>
-    <div id="correlation-list" class="correlation-list" aria-label="Trigger correlation data"></div>
-  </div>
-  <div class="card-box" style="margin-top:12px">
-    <div class="card-box-title">📋 Summary Statistics</div>
-    <div id="summary-stats" class="summary-stats" aria-label="Summary statistics"></div>
-  </div>
-</div>
+  function bytesToB64url(bytes) {
+    let s = '';
+    bytes.forEach(b => s += String.fromCharCode(b));
+    return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+  }
 
-<!-- ═══ TAB: MORE ═══ -->
-<div id="more-tab" class="tab-content" role="tabpanel" aria-labelledby="tab-more">
+  function b64urlToBytes(s) {
+    s = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    const raw = atob(s);
+    return Uint8Array.from(raw, c => c.charCodeAt(0));
+  }
 
-  <div class="section-title">
-    <span>📅 Appointments</span>
-    <button class="add-btn" id="add-appt-btn" aria-label="Add appointment">+ Add</button>
-  </div>
-  <div id="appointments-list" aria-label="Appointments list"></div>
+  function randomToken(bytes = 32) {
+    const a = new Uint8Array(bytes);
+    crypto.getRandomValues(a);
+    return bytesToB64url(a);
+  }
 
-  <div class="section-title" style="margin-top:18px">
-    <span>📝 Notes</span>
-    <button class="add-btn" id="add-note-btn" aria-label="Add new note">+ New</button>
-  </div>
-  <div id="notes-list" aria-label="Notes list"></div>
+  function loadCloud() {
+    try { return JSON.parse(localStorage.getItem(CLOUD_KEY)) || null; } catch { return null; }
+  }
 
-  <div class="section-title" style="margin-top:18px"><span>📤 Export</span></div>
-  <div class="card-box">
-    <div class="card-box-title">For Doctor / Spreadsheet</div>
-    <div class="btn-group">
-      <button class="primary-btn" id="export-csv-btn">📊 Export CSV</button>
-      <button class="primary-btn" id="export-txt-btn">📄 Export Text</button>
-      <button class="primary-btn" id="export-pdf-btn" style="background:#6a1b9a">📑 Export PDF</button>
-    </div>
-  </div>
+  function saveCloud(c) {
+    localStorage.setItem(CLOUD_KEY, JSON.stringify(c));
+    renderCloudStatus();
+  }
 
-  <div class="card-box" style="margin-top:12px">
-    <div class="card-box-title">Full App Backup (JSON)</div>
-    <div class="btn-group">
-      <button class="primary-btn" id="export-json-btn">💾 Save Backup</button>
-      <button class="primary-btn" id="import-json-btn" style="background:var(--surface2);color:var(--blue);border:1.5px solid var(--blue)">📂 Restore</button>
-      <input type="file" id="import-file-input" accept=".json" style="display:none" aria-hidden="true">
-    </div>
-  </div>
+  async function importAesKey(keyString) {
+    return crypto.subtle.importKey('raw', b64urlToBytes(keyString), {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+  }
 
-  <div class="card-box danger-box" style="margin-top:12px">
-    <div class="card-box-title" style="color:var(--red)">⚠️ Danger Zone</div>
-    <button class="primary-btn" id="clear-all-btn" style="background:var(--red);width:100%">🗑️ Clear All Data</button>
-  </div>
+  async function encryptState(state, keyString) {
+    const key = await importAesKey(keyString);
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const plaintext = encoder.encode(JSON.stringify(state));
+    const encrypted = await crypto.subtle.encrypt({name:'AES-GCM', iv}, key, plaintext);
+    return {
+      schema: 1,
+      app: 'Untold Seizure Log',
+      appVersion: '0.5-universal-beta',
+      savedAt: Date.now(),
+      iv: bytesToB64url(iv),
+      ciphertext: bytesToB64url(new Uint8Array(encrypted))
+    };
+  }
 
-  <div class="section-title" style="margin-top:18px"><span>⚙️ Settings</span></div>
-  <div class="card-box">
-    <div class="settings-row">
-      <label for="voice-toggle">🎤 Voice-to-Text notes</label>
-      <input type="checkbox" id="voice-toggle" class="toggle-check" aria-label="Enable voice to text for notes">
-    </div>
-    <div class="settings-row">
-      <label for="backup-remind-toggle">📦 Weekly backup reminder</label>
-      <input type="checkbox" id="backup-remind-toggle" class="toggle-check" aria-label="Enable weekly backup reminder notifications">
-    </div>
-    <div class="settings-row">
-      <label for="emergency-contact-input">🆘 Emergency contact number</label>
-      <input type="tel" id="emergency-contact-input" class="settings-input" placeholder="07700 000000" aria-label="Emergency contact phone number">
-    </div>
-    <button class="primary-btn" id="save-settings-btn" style="width:100%;margin-top:10px">Save Settings</button>
-  </div>
+  async function decryptState(payload, keyString) {
+    const key = await importAesKey(keyString);
+    const plain = await crypto.subtle.decrypt(
+      {name:'AES-GCM', iv:b64urlToBytes(payload.iv)},
+      key,
+      b64urlToBytes(payload.ciphertext)
+    );
+    return JSON.parse(decoder.decode(plain));
+  }
 
-  <div class="card-box coffee-card" style="margin-top:18px" role="note" aria-label="Support the developer">
-    <div class="card-box-title">☕ Enjoying Seizurre?</div>
-    <p class="box-desc" style="margin-bottom:10px">
-      This app is free &amp; private — built with care for people who need it.
-      If it's helped you, a small donation means a lot and keeps development going.
-    </p>
-    <a href="https://paypal.me/stephndave" target="_blank" rel="noopener noreferrer"
-       class="coffee-btn" aria-label="Buy me a coffee via PayPal (optional)">
-      ☕ Buy me a coffee
-    </a>
-    <p class="coffee-note">Completely optional — no pressure at all 💜</p>
-  </div>
+  async function callBackupApi(action, token, payload) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','Cache-Control':'no-store'},
+      body: JSON.stringify({action, token, payload})
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(body.error || 'Backup service unavailable');
+    return body;
+  }
 
-  <div class="app-footer" role="contentinfo">
-    © 2026 Stephanie Adams — Seizurre Diary App<br>
-    Personal use only. All rights reserved. Redistribution prohibited.
-  </div>
-</div>
+  async function performBackup() {
+    const cloud = loadCloud();
+    if (!cloud?.enabled || !cloud.token || !cloud.key || backupBusy || !navigator.onLine) return;
+    if (!window.UntoldApp?.getState) return;
+    backupBusy = true;
+    cloud.status = 'backing-up';
+    saveCloud(cloud);
+    try {
+      const payload = await encryptState(window.UntoldApp.getState(), cloud.key);
+      await callBackupApi('put', cloud.token, payload);
+      cloud.lastBackupAt = Date.now();
+      cloud.lastError = '';
+      cloud.status = 'ok';
+      saveCloud(cloud);
+    } catch (e) {
+      cloud.lastError = e?.message || 'Backup failed';
+      cloud.status = 'error';
+      saveCloud(cloud);
+    } finally {
+      backupBusy = false;
+    }
+  }
 
-<!-- BOTTOM NAV -->
-<nav class="bottom-nav" role="navigation" aria-label="Main navigation">
-  <button class="nav-btn active" data-tab="seizure" aria-label="Seizure log tab" aria-current="page">
-    <span class="nav-icon" aria-hidden="true">⚡</span><span>Log</span>
-  </button>
-  <button class="nav-btn" data-tab="meds" aria-label="Medications tab">
-    <span class="nav-icon" aria-hidden="true">💊</span><span>Meds</span>
-  </button>
-  <button class="nav-btn" data-tab="triggers" aria-label="Triggers and aura tab">
-    <span class="nav-icon" aria-hidden="true">🎯</span><span>Triggers</span>
-  </button>
-  <button class="nav-btn" data-tab="charts" aria-label="Charts tab">
-    <span class="nav-icon" aria-hidden="true">📊</span><span>Charts</span>
-  </button>
-  <button class="nav-btn" data-tab="more" aria-label="More options tab">
-    <span class="nav-icon" aria-hidden="true">⋯</span><span>More</span>
-  </button>
-</nav>
+  function queueBackup(delay = 2500) {
+    const cloud = loadCloud();
+    if (!cloud?.enabled) return;
+    clearTimeout(backupTimer);
+    backupTimer = setTimeout(performBackup, delay);
+  }
 
-<!-- MODALS -->
-<div id="confirm-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-  <div class="modal-content">
-    <div class="modal-title" id="confirm-title">Delete this record?</div>
-    <div class="modal-sub">This cannot be undone.</div>
-    <div class="modal-btns">
-      <button class="btn-danger" id="confirm-delete-yes">Delete</button>
-      <button class="btn-cancel" id="confirm-delete-no">Cancel</button>
-    </div>
-  </div>
-</div>
+  function humanWhen(ms) {
+    if (!ms) return 'Not backed up yet';
+    const d = new Date(ms);
+    return d.toLocaleString(undefined, {day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+  }
 
-<div id="clear-all-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-all-title">
-  <div class="modal-content">
-    <div class="modal-title" id="clear-all-title">⚠️ Clear ALL Data?</div>
-    <div class="modal-sub">Permanently erases every seizure, medication, appointment and note. Cannot be undone.</div>
-    <div class="modal-btns">
-      <button class="btn-danger" id="clear-all-confirm1">Yes, clear everything</button>
-      <button class="btn-cancel" id="clear-all-cancel1">Cancel</button>
-    </div>
-  </div>
-</div>
-<div id="clear-all-modal2" class="modal" role="dialog" aria-modal="true" aria-labelledby="clear-all-title2">
-  <div class="modal-content">
-    <div class="modal-title" id="clear-all-title2">⚠️ Final Confirmation</div>
-    <div class="modal-sub">This is your last chance. ALL data will be gone forever with no undo.</div>
-    <div class="modal-btns">
-      <button class="btn-danger" id="clear-all-confirm2">Delete Everything</button>
-      <button class="btn-cancel" id="clear-all-cancel2">Cancel</button>
-    </div>
-  </div>
-</div>
+  function recoveryCode(c) {
+    return `USL1.${c.token}.${c.key}`;
+  }
 
-<div id="restore-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="restore-title">
-  <div class="modal-content">
-    <div class="modal-title" id="restore-title">Restore Backup?</div>
-    <div class="modal-sub" id="restore-modal-sub">This will replace all current data with the backup.</div>
-    <div class="modal-btns">
-      <button class="btn-danger" id="restore-confirm-yes">Restore</button>
-      <button class="btn-cancel" id="restore-confirm-no">Cancel</button>
-    </div>
-  </div>
-</div>
+  function parseRecoveryCode(value) {
+    const p = String(value || '').trim().split('.');
+    if (p.length !== 3 || p[0] !== 'USL1' || p[1].length < 32 || p[2].length < 32) throw new Error('That recovery code is not valid.');
+    return {token:p[1], key:p[2]};
+  }
 
-<div id="seizure-detail-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="seizure-detail-title">
-  <div class="modal-content">
-    <div class="modal-title" id="seizure-detail-title">Seizure logged ✓</div>
-    <div class="modal-sub">Add details while fresh (all optional):</div>
-    <div class="form-group">
-      <label for="sd-duration">Duration (seconds)</label>
-      <input type="number" id="sd-duration" min="1" max="3600" placeholder="e.g. 45" aria-label="Duration in seconds">
-    </div>
-    <div class="form-group">
-      <label for="sd-type">Seizure type</label>
-      <select id="sd-type" aria-label="Seizure type">
-        <option value="">— Unknown —</option>
-        <option>Tonic-clonic (grand mal)</option>
-        <option>Absence</option>
-        <option>Focal aware</option>
-        <option>Focal impaired awareness</option>
-        <option>Myoclonic</option>
-        <option>Atonic (drop)</option>
-        <option>Tonic</option>
-        <option>Other</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>Quick triggers</label>
-      <div id="sd-trigger-chips" class="trigger-chip-row" role="group" aria-label="Select triggers that apply"></div>
-    </div>
-    <div class="form-group">
-      <label for="sd-notes">
-        Notes
-        <button id="sd-voice-btn" class="voice-btn" title="Dictate notes" aria-label="Start voice dictation" hidden>🎤</button>
-      </label>
-      <textarea id="sd-notes" rows="3" placeholder="Where were you, how did you feel…" aria-label="Notes about the seizure"></textarea>
-    </div>
-    <div class="modal-btns">
-      <button class="btn-primary" id="sd-save-btn">Save details</button>
-      <button class="btn-cancel" id="sd-skip-btn">Skip for now</button>
-    </div>
-  </div>
-</div>
 
-<div id="med-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="med-modal-title">
-  <div class="modal-content">
-    <div class="modal-title" id="med-modal-title">Add Medication</div>
-    <div class="form-group"><label for="med-name">Name</label><input type="text" id="med-name" placeholder="e.g. Levetiracetam" autocomplete="off"></div>
-    <div class="form-group"><label for="med-dose">Dose</label><input type="text" id="med-dose" placeholder="500mg"></div>
-    <div class="form-group"><label for="med-frequency">Frequency</label><input type="text" id="med-frequency" placeholder="2× daily"></div>
-    <div class="form-group"><label for="med-times">Dose times (comma-separated)</label><input type="text" id="med-times" placeholder="08:00,20:00" autocomplete="off"></div>
-    <div class="form-group"><label for="med-quantity">Quantity per dose</label><input type="text" id="med-quantity" placeholder="1 tablet"></div>
-    <div class="modal-btns">
-      <button class="btn-primary" id="med-save">Save</button>
-      <button class="btn-cancel" id="med-cancel">Cancel</button>
-    </div>
-  </div>
-</div>
+  function openLocalDb() {
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) return resolve(null);
+      const req = indexedDB.open('untold-seizure-log-local', 1);
+      req.onupgradeneeded = () => {
+        if (!req.result.objectStoreNames.contains('snapshots')) req.result.createObjectStore('snapshots');
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
 
-<div id="refill-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="refill-modal-title">
-  <div class="modal-content">
-    <div class="modal-title" id="refill-modal-title">Add Refill Reminder</div>
-    <div class="form-group"><label for="refill-med">Medication name</label><input type="text" id="refill-med" placeholder="Levetiracetam" autocomplete="off"></div>
-    <div class="form-group"><label for="refill-date">Refill by date</label><input type="date" id="refill-date"></div>
-    <div class="form-group"><label for="refill-qty">Units/tablets remaining</label><input type="number" id="refill-qty" placeholder="14" min="0"></div>
-    <div class="modal-btns">
-      <button class="btn-primary" id="refill-save">Save</button>
-      <button class="btn-cancel" id="refill-cancel">Cancel</button>
-    </div>
-  </div>
-</div>
+  async function saveIndexedSnapshot() {
+    if (!window.UntoldApp?.getState) return;
+    try {
+      const db = await openLocalDb(); if (!db) return;
+      await new Promise((resolve, reject) => {
+        const tx = db.transaction('snapshots', 'readwrite');
+        tx.objectStore('snapshots').put({savedAt:Date.now(), state:window.UntoldApp.getState()}, 'current');
+        tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    } catch {}
+  }
 
-<div id="appt-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="appt-modal-title">
-  <div class="modal-content">
-    <div class="modal-title" id="appt-modal-title">Add Appointment</div>
-    <div class="form-group"><label for="appt-title">Title / Purpose</label><input type="text" id="appt-title" placeholder="Neurologist follow-up" autocomplete="off"></div>
-    <div class="form-group"><label for="appt-location">Location</label><input type="text" id="appt-location" placeholder="St. Mary's Hospital" autocomplete="off"></div>
-    <div class="form-group"><label for="appt-datetime">Date &amp; Time</label><input type="datetime-local" id="appt-datetime"></div>
-    <div class="form-group"><label for="appt-with">With whom</label><input type="text" id="appt-with" placeholder="Dr. Smith" autocomplete="off"></div>
-    <div class="modal-btns">
-      <button class="btn-primary" id="appt-save">Save</button>
-      <button class="btn-cancel" id="appt-cancel">Cancel</button>
-    </div>
-  </div>
-</div>
+  async function restoreIndexedSnapshotIfNeeded() {
+    if (localStorage.getItem('untoldSeizureLog_v1')) { saveIndexedSnapshot(); return; }
+    try {
+      const db = await openLocalDb(); if (!db) return;
+      const record = await new Promise((resolve, reject) => {
+        const tx = db.transaction('snapshots', 'readonly');
+        const req = tx.objectStore('snapshots').get('current');
+        req.onsuccess = () => resolve(req.result || null); req.onerror = () => reject(req.error);
+      });
+      db.close();
+      if (record?.state && window.UntoldApp?.replaceState) window.UntoldApp.replaceState(record.state);
+    } catch {}
+  }
 
-<div id="emergency-modal" class="modal emergency-modal" role="dialog" aria-modal="true" aria-labelledby="emergency-title">
-  <div class="modal-content emergency-content">
-    <div class="emergency-title" id="emergency-title">🆘 Seizure First Aid</div>
-    <div class="emergency-steps" role="list">
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">1</span><span>Stay calm. Note the time the seizure started.</span></div>
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">2</span><span>Clear the area — move hard or sharp objects away.</span></div>
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">3</span><span>Cushion the head with something soft.</span></div>
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">4</span><span>Do <strong>NOT</strong> restrain movements. Do NOT put anything in the mouth.</span></div>
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">5</span><span>Gently turn onto their side (recovery position) once convulsions stop.</span></div>
-      <div class="estep" role="listitem"><span class="estep-num" aria-hidden="true">6</span><span>Stay with them until they are fully conscious and aware.</span></div>
-      <div class="estep estep-call" role="listitem"><span class="estep-num" aria-hidden="true">999</span><span>Call 999 if: seizure &gt;5 min, injury, doesn't recover, second seizure, or first ever.</span></div>
-    </div>
-    <div class="emergency-actions">
-      <a id="call-999-btn" href="tel:999" class="btn-999" role="button" aria-label="Call 999 emergency services">📞 Call 999</a>
-      <a id="call-contact-btn" href="#" class="btn-contact" role="button" aria-label="Call your emergency contact" hidden>📱 Call Contact</a>
-    </div>
-    <button class="btn-cancel" id="emergency-close" style="width:100%;margin-top:12px" aria-label="Close first aid guide">Close</button>
-  </div>
-</div>
+  function enhanceAccessibility() {
+    document.querySelectorAll('.field').forEach((field, i) => {
+      const control = field.querySelector('input,select,textarea');
+      const label = field.querySelector('label');
+      if (!control || !label) return;
+      if (!control.id) control.id = `untold-field-${i}`;
+      if (!label.htmlFor) label.htmlFor = control.id;
+    });
+    document.querySelectorAll('button.close').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label','Close'); });
+    document.querySelectorAll('.nav button').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', b.textContent.trim().replace(/\s+/g,' ')); });
+  }
 
-<script src="app.js" defer></script>
-</body>
-</html>
+  function addUi() {
+    const more = document.querySelector('.screen[data-screen="more"]');
+    if (!more || $('#cloudBackupCard')) return;
+    const h2 = more.querySelector('h2');
+
+    const install = document.createElement('div');
+    install.className = 'card install-card';
+    install.id = 'installCard';
+    install.innerHTML = `
+      <h3>Install Untold Seizure Log</h3>
+      <p class="subtle install-help" id="installHelp">Install this version to your Home Screen so it opens like an app and remains available offline.</p>
+      <div class="button-row" style="justify-content:flex-start">
+        <button class="add-btn" id="installAppBtn" type="button">Install app</button>
+      </div>`;
+
+    const cloud = document.createElement('div');
+    cloud.className = 'card cloud-card';
+    cloud.id = 'cloudBackupCard';
+    cloud.innerHTML = `
+      <h3>Automatic secure backup</h3>
+      <p class="subtle">Optional. Your log is encrypted on this device before it is uploaded. The backup service receives encrypted data, not readable seizure or diary entries.</p>
+      <div class="cloud-status"><span class="cloud-dot" id="cloudDot"></span><strong id="cloudStatusText">Not enabled</strong></div>
+      <div class="meta" id="cloudStatusDetail">Your existing local data stays on this device.</div>
+      <div class="button-row" style="justify-content:flex-start">
+        <button class="add-btn" id="enableCloudBtn" type="button">Turn on automatic backup</button>
+        <button class="secondary" id="backupNowBtn" type="button">Back up now</button>
+        <button class="secondary" id="recoveryBtn" type="button">Recovery code</button>
+        <button class="secondary" id="restoreCloudBtn" type="button">Restore from cloud</button>
+      </div>`;
+
+    if (h2) {
+      h2.insertAdjacentElement('afterend', cloud);
+      h2.insertAdjacentElement('afterend', install);
+    } else {
+      more.prepend(cloud); more.prepend(install);
+    }
+
+    const d = document.createElement('dialog');
+    d.id = 'cloudDialog';
+    d.innerHTML = `<div class="dialog-body">
+      <div class="dialog-head"><h2 id="cloudDialogTitle">Secure backup</h2><button class="close" id="closeCloudDialog" type="button" aria-label="Close">×</button></div>
+      <div id="cloudDialogBody"></div>
+    </div>`;
+    document.body.appendChild(d);
+
+    $('#closeCloudDialog').onclick = () => d.close();
+    $('#enableCloudBtn').onclick = openEnableBackup;
+    $('#backupNowBtn').onclick = () => performBackup();
+    $('#recoveryBtn').onclick = showRecoveryCode;
+    $('#restoreCloudBtn').onclick = openRestore;
+    $('#installAppBtn').onclick = triggerInstall;
+
+    updateInstallUi();
+    renderCloudStatus();
+  }
+
+  function renderCloudStatus() {
+    const c = loadCloud();
+    const dot = $('#cloudDot'), title = $('#cloudStatusText'), detail = $('#cloudStatusDetail');
+    if (!dot || !title || !detail) return;
+    dot.className = 'cloud-dot';
+    const enableBtn = $('#enableCloudBtn');
+    if (!c?.enabled) {
+      title.textContent = c?.status === 'paused' ? 'Automatic backup paused' : 'Not enabled'; detail.textContent = c?.status === 'paused' ? 'The existing encrypted cloud copy is still stored; new changes are not uploading.' : 'Your existing local data stays on this device.';
+      $('#backupNowBtn').hidden = true; $('#recoveryBtn').hidden = !c?.token;
+      if (enableBtn) enableBtn.textContent = c?.token ? 'Resume automatic backup' : 'Turn on automatic backup';
+      return;
+    }
+    if (enableBtn) enableBtn.textContent = 'Backup settings';
+    $('#backupNowBtn').hidden = false; $('#recoveryBtn').hidden = false;
+    if (!navigator.onLine) {
+      dot.classList.add('warn'); title.textContent = 'Offline'; detail.textContent = 'Changes stay on this device and will back up automatically when internet returns.'; return;
+    }
+    if (c.status === 'backing-up') {
+      dot.classList.add('warn'); title.textContent = 'Backing up…'; detail.textContent = 'Encrypting and uploading the latest copy.'; return;
+    }
+    if (c.status === 'error') {
+      dot.classList.add('bad'); title.textContent = 'Backup needs attention'; detail.textContent = c.lastError || 'The latest automatic backup failed.'; return;
+    }
+    dot.classList.add('ok'); title.textContent = 'Automatic backup on'; detail.textContent = `Last secure backup: ${humanWhen(c.lastBackupAt)}`;
+  }
+
+  function openEnableBackup() {
+    const current = loadCloud();
+    if (current?.enabled) return openManageBackup();
+    const d = $('#cloudDialog');
+    $('#cloudDialogTitle').textContent = 'Turn on automatic secure backup';
+    $('#cloudDialogBody').innerHTML = `
+      <div class="alert warning"><b>Health-data privacy:</b> turning this on sends an encrypted copy of your log to the cloud backup service. Encryption happens on your device before upload.</div>
+      <p>Your recovery code is the only practical way to restore this encrypted backup on a different device. Keep it somewhere safe and private.</p>
+      <label class="consent-check"><input type="checkbox" id="cloudConsent"> <span>I want encrypted automatic cloud backup and understand that I must keep my recovery code safe.</span></label>
+      <div class="button-row"><button class="secondary" id="cancelCloudEnable" type="button">Cancel</button><button class="add-btn" id="confirmCloudEnable" type="button" disabled>Enable backup</button></div>`;
+    const check = $('#cloudConsent'), btn = $('#confirmCloudEnable');
+    check.onchange = () => btn.disabled = !check.checked;
+    $('#cancelCloudEnable').onclick = () => d.close();
+    btn.onclick = async () => {
+      const existing = loadCloud();
+      const c = existing?.token && existing?.key ? existing : {token:randomToken(32), key:randomToken(32)};
+      c.enabled = true; c.enabledAt = c.enabledAt || Date.now(); c.status = 'backing-up'; c.lastError='';
+      saveCloud(c);
+      try{navigator.storage?.persist?.()}catch{}
+      d.close();
+      showRecoveryCode(true);
+      await performBackup();
+    };
+    d.showModal();
+  }
+
+
+  function openManageBackup() {
+    const c = loadCloud();
+    if (!c?.enabled) return openEnableBackup();
+    const d = $('#cloudDialog');
+    $('#cloudDialogTitle').textContent = 'Automatic backup settings';
+    $('#cloudDialogBody').innerHTML = `
+      <div class="cloud-status"><span class="cloud-dot ${c.status==='error'?'bad':'ok'}"></span><strong>Automatic backup is on</strong></div>
+      <p class="subtle">Last secure backup: ${esc(humanWhen(c.lastBackupAt))}</p>
+      <p>Pausing backup leaves the current encrypted cloud copy in place. Deleting removes the cloud copy and disables future automatic backups on this device.</p>
+      <div class="button-row" style="justify-content:flex-start">
+        <button class="secondary" id="pauseCloudBtn" type="button">Pause automatic backup</button>
+        <button class="secondary danger" id="deleteCloudBtn" type="button">Delete cloud backup</button>
+      </div>`;
+    $('#pauseCloudBtn').onclick = () => {
+      const next = loadCloud();
+      next.enabled = false; next.status = 'paused';
+      saveCloud(next); d.close();
+    };
+    $('#deleteCloudBtn').onclick = async () => {
+      if (!confirm('Permanently delete the encrypted cloud backup and turn automatic backup off?')) return;
+      const btn = $('#deleteCloudBtn'); btn.disabled = true; btn.textContent = 'Deleting…';
+      try {
+        await callBackupApi('delete', c.token);
+        localStorage.removeItem(CLOUD_KEY);
+        renderCloudStatus(); d.close();
+      } catch (e) {
+        alert(e?.message || 'Could not delete the cloud backup.');
+        btn.disabled = false; btn.textContent = 'Delete cloud backup';
+      }
+    };
+    d.showModal();
+  }
+
+  function showRecoveryCode(firstTime = false) {
+    const c = loadCloud();
+    if (!c?.token || !c?.key) return openEnableBackup();
+    const d = $('#cloudDialog');
+    $('#cloudDialogTitle').textContent = firstTime ? 'Save your recovery code' : 'Your recovery code';
+    $('#cloudDialogBody').innerHTML = `
+      <div class="alert ${firstTime?'warning':''}"><b>Keep this private.</b> Anyone with this code can retrieve the encrypted backup and has the key needed to decrypt it.</div>
+      <p class="subtle">If this browser/app is deleted or your phone is lost, this code lets you restore your log.</p>
+      <textarea class="recovery-code" id="recoveryCodeBox" readonly>${esc(recoveryCode(c))}</textarea>
+      <div class="button-row" style="justify-content:flex-start"><button class="add-btn" id="copyRecoveryBtn" type="button">Copy recovery code</button><button class="secondary" id="downloadRecoveryBtn" type="button">Save recovery file</button></div>`;
+    $('#copyRecoveryBtn').onclick = async () => {
+      try { await navigator.clipboard.writeText(recoveryCode(c)); $('#copyRecoveryBtn').textContent='Copied'; } catch { $('#recoveryCodeBox').select(); document.execCommand('copy'); }
+    };
+    $('#downloadRecoveryBtn').onclick = () => {
+      const text = `Untold Seizure Log recovery code\n\n${recoveryCode(c)}\n\nKeep this file private. It can restore your encrypted cloud backup.`;
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'text/plain'})); a.download = 'untold-seizure-log-recovery-code.txt'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    };
+    d.showModal();
+  }
+
+  function openRestore() {
+    const d = $('#cloudDialog');
+    $('#cloudDialogTitle').textContent = 'Restore encrypted cloud backup';
+    $('#cloudDialogBody').innerHTML = `
+      <div class="alert warning"><b>This replaces the log currently on this device.</b> Make a manual backup first if you need to keep the current copy.</div>
+      <div class="field"><label for="restoreRecoveryCode">Recovery code</label><textarea id="restoreRecoveryCode" class="recovery-code" placeholder="USL1.…"></textarea></div>
+      <div class="button-row"><button class="secondary" id="cancelCloudRestore" type="button">Cancel</button><button class="add-btn" id="confirmCloudRestore" type="button">Restore</button></div>`;
+    $('#cancelCloudRestore').onclick = () => d.close();
+    $('#confirmCloudRestore').onclick = async () => {
+      const btn = $('#confirmCloudRestore');
+      try {
+        btn.disabled = true; btn.textContent = 'Restoring…';
+        const credentials = parseRecoveryCode($('#restoreRecoveryCode').value);
+        const result = await callBackupApi('get', credentials.token);
+        const restored = await decryptState(result.payload, credentials.key);
+        if (!restored || !Array.isArray(restored.events) || !Array.isArray(restored.medications)) throw new Error('The backup data is not recognised.');
+        if (!confirm('Replace the current log on this device with the recovered cloud backup?')) { btn.disabled=false; btn.textContent='Restore'; return; }
+        saveCloud({enabled:true, token:credentials.token, key:credentials.key, status:'ok', lastBackupAt:result.payload.savedAt || Date.now(), enabledAt:Date.now(), lastError:''});
+        window.UntoldApp.replaceState(restored);
+        d.close();
+        setTimeout(() => alert('Cloud backup restored successfully.'), 50);
+      } catch (e) {
+        alert(e?.message || 'Could not restore this backup.');
+        btn.disabled = false; btn.textContent = 'Restore';
+      }
+    };
+    d.showModal();
+  }
+
+  async function triggerInstall() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice.catch(()=>{});
+      installPrompt = null;
+      updateInstallUi();
+      return;
+    }
+    const ua = navigator.userAgent || '';
+    const ios = /iphone|ipad|ipod/i.test(ua);
+    if (ios) alert('On iPhone/iPad: tap Share, choose “Add to Home Screen”, then tap Add.');
+    else alert('Use your browser menu and choose “Install app” or “Add to Home screen”.');
+  }
+
+  function updateInstallUi() {
+    const btn = $('#installAppBtn'), help = $('#installHelp');
+    if (!btn || !help) return;
+    const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (standalone) { btn.hidden = true; help.textContent = 'Installed on this device. It can open standalone and the main app remains available offline.'; return; }
+    btn.hidden = false;
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    help.textContent = ios ? 'On iPhone/iPad this installs from Share → Add to Home Screen. It then opens as its own Home Screen app.' : 'Install this version to your Home Screen so it opens like an app and remains available offline.';
+  }
+
+  function addOnlinePill() {
+    const p = document.createElement('div');
+    p.className = 'online-pill'; p.id='onlinePill'; document.body.appendChild(p);
+    const refresh = () => { p.textContent = navigator.onLine ? '● Online' : '● Offline'; p.classList.toggle('offline', !navigator.onLine); renderCloudStatus(); if (navigator.onLine) queueBackup(700); };
+    addEventListener('online', refresh); addEventListener('offline', refresh); refresh();
+  }
+
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; updateInstallUi(); });
+  addEventListener('appinstalled', () => { installPrompt = null; updateInstallUi(); });
+  addEventListener('untold:state-saved', () => { queueBackup(); saveIndexedSnapshot(); });
+
+  window.UntoldUniversal = {queueBackup, backupNow:performBackup};
+
+  async function init() {
+    enhanceAccessibility();
+    await restoreIndexedSnapshotIfNeeded();
+    addUi(); addOnlinePill();
+    if (loadCloud()?.enabled) queueBackup(1200);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+</body></html>
