@@ -1,5 +1,5 @@
-const CACHE='untold-seizure-log-v5-beta3';
-const CORE=['/','/index.html','/manifest.json','/icon-512.png','/download.html','/quick-log.html','/quick-log-manifest.json'];
+const CACHE='untold-seizure-log-v5-beta4';
+const CORE=['/','/index.html','/manifest.json','/icon-512.png','/download.html','/quick/log.html'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()));
