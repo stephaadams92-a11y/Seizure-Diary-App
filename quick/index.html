@@ -33,8 +33,36 @@ p{line-height:1.5}.muted{color:var(--muted);font-size:14px}.ok{background:#edf7f
 (async()=>{
   const params=new URLSearchParams(location.search);
   if(params.get('run')==='1'){
-    const launch=(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2));
-    location.replace('/?action=seizure&launch='+encodeURIComponent(launch));
+    try{
+      const DB_KEY='untoldSeizureLog_v1';
+      const raw=JSON.parse(localStorage.getItem(DB_KEY)||'{}');
+      if(!Array.isArray(raw.events)) raw.events=[];
+      if(!raw.profile) raw.profile={};
+      if(!raw.shared) raw.shared={};
+      const d=new Date();
+      const date=[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+      const time=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+      const event={
+        id:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2)),
+        type:'seizure',date,time,subtype:'',duration:'',sleep:'',aura:'',awareness:false,
+        incontinence:false,injury:false,rescue:false,trigger:'',ownNotes:'',witnessNotes:'',
+        recovery:'',loggedBy:(raw.shared.userName||raw.profile.name||'Me'),
+        needsDetails:true,createdAt:Date.now()
+      };
+      raw.events.push(event);
+      if(!raw.version) raw.version=4;
+      localStorage.setItem(DB_KEY,JSON.stringify(raw));
+      try{
+        const bc=new BroadcastChannel('untold-seizure-log');
+        bc.postMessage({type:'quick-seizure-logged',id:event.id,at:event.createdAt});
+        bc.close();
+      }catch(e){}
+      history.replaceState(null,'','/quick/?logged=1');
+      document.body.innerHTML='<main><div class="card"><img class="logo" src="/icon-512.png" alt=""><h1>Seizure logged</h1><div class="ok"><strong>'+time+'</strong><br>The seizure was saved directly to Untold Seizure Log.</div><button class="primary" id="openMain">Open Untold Seizure Log</button><p class="muted">You can close this shortcut now. Opening the normal app later will not create another seizure record.</p></div></main>';
+      document.getElementById('openMain').onclick=()=>location.href='/';
+    }catch(e){
+      document.body.innerHTML='<main><div class="card"><h1>Could not log seizure</h1><p>Please open Untold Seizure Log and use the main LOG SEIZURE button.</p><button class="primary" onclick="location.href=\'/\'">Open app</button></div></main>';
+    }
     return;
   }
   if('serviceWorker' in navigator){
