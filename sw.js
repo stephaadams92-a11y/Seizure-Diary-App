@@ -1,4 +1,4 @@
-const CACHE='untold-seizure-log-v5-beta2';
+const CACHE='untold-seizure-log-v5-beta3';
 const CORE=['/','/index.html','/manifest.json','/icon-512.png','/download.html','/quick-log.html','/quick-log-manifest.json'];
 
 self.addEventListener('install',event=>{
@@ -36,6 +36,11 @@ self.addEventListener('push',event=>{
     icon:'/icon-512.png',
     badge:'/icon-512.png',
     tag:data.tag||'untold-reminder',
+    renotify:true,
+    requireInteraction:true,
+    silent:false,
+    vibrate:[300,120,300,120,500],
+    timestamp:Date.now(),
     data:{url:data.url||'/'}
   };
   event.waitUntil(self.registration.showNotification(title,options));
