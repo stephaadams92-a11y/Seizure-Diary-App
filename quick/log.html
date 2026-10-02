@@ -54,8 +54,12 @@ p{line-height:1.5}.muted{color:var(--muted);font-size:14px}.ok{background:#edf7f
     // Remove ?setup=1 before the user adds the current page to the Home Screen.
     history.replaceState(null,'','/quick/log.html');
     document.getElementById('title').textContent='Add one-tap Log Seizure';
+    let visibleCount=0;
+    try{visibleCount=(JSON.parse(localStorage.getItem('untoldSeizureLog_v1')||'{}').events||[]).length}catch(e){}
     cardBody.innerHTML=
       '<div class="warn"><strong>No seizure has been logged.</strong> This is setup mode only.</div>'+
+      '<p><strong>Storage check:</strong> this browser can currently see <b>'+visibleCount+'</b> saved Untold event'+(visibleCount===1?'':'s')+'.</p>'+
+      '<p class="muted">If that roughly matches what is in your app, this shortcut is using the correct storage. If the app has records but this says 0, do not add it yet.</p>'+
       '<p>Use your browser menu now and choose <b>Add to Home screen</b> or <b>Create shortcut</b>. The saved icon will point to this clean page.</p>'+
       '<p>Later, tapping that Home Screen icon will immediately record one seizure in Untold Seizure Log with the current date and time.</p>'+
       '<button class="secondary" id="back">Back to Untold Seizure Log</button>'+
