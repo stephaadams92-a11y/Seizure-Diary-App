@@ -198,7 +198,11 @@ document.getElementById('appointmentForm').onsubmit=e=>{e.preventDefault();const
 function renderCare(){document.getElementById('carePlan').value=state.profile.carePlan||'';document.getElementById('emergencyContact').value=state.profile.emergencyContact||'';document.getElementById('emergencyNumber').value=state.profile.emergencyNumber||'';document.getElementById('ownerLabel').textContent=state.profile.name||'Profile owner';document.getElementById('deviceUserLabel').textContent=(state.shared.userName||'This device')+' · '+cap(state.shared.role||'owner')}
 document.getElementById('saveCare').onclick=()=>{state.profile.carePlan=document.getElementById('carePlan').value.trim();state.profile.emergencyContact=document.getElementById('emergencyContact').value.trim();state.profile.emergencyNumber=document.getElementById('emergencyNumber').value.trim();save();toast('Care plan saved')};document.getElementById('pairInfoBtn').onclick=()=>document.getElementById('pairDialog').showModal();
 function renderSettings(){document.getElementById('profileName').value=state.profile.name||'';document.getElementById('deviceUserName').value=state.shared.userName||'';document.getElementById('deviceRole').value=state.shared.role||'owner';document.getElementById('auraChoices').value=(state.profile.auraChoices||[]).join('\n');document.getElementById('typeChoices').value=(state.profile.typeChoices||[]).join('\n');document.getElementById('diaryCategories').value=(state.profile.diaryCategories||[]).join('\n')}
-document.getElementById('saveSettings').onclick=()=>{state.profile.name=document.getElementById('profileName').value.trim();state.shared.userName=document.getElementById('deviceUserName').value.trim();state.shared.role=document.getElementById('deviceRole').value;state.profile.auraChoices=document.getElementById('auraChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.typeChoices=document.getElementById('typeChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.diaryCategories=document.getElementById('diaryCategories').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);save();toast('Settings saved')};function openSeizureShortcutInstaller(){location.href='/quick/'}
+document.getElementById('saveSettings').onclick=()=>{state.profile.name=document.getElementById('profileName').value.trim();state.shared.userName=document.getElementById('deviceUserName').value.trim();state.shared.role=document.getElementById('deviceRole').value;state.profile.auraChoices=document.getElementById('auraChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.typeChoices=document.getElementById('typeChoices').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);state.profile.diaryCategories=document.getElementById('diaryCategories').value.split(/\n+/).map(x=>x.trim()).filter(Boolean);save();toast('Settings saved')};function openSeizureShortcutInstaller(){
+  const url=location.origin+'/quick/';
+  const opened=window.open(url,'_blank','noopener');
+  if(!opened) location.href=url;
+}
 document.getElementById('pinSeizureShortcut').onclick=()=>{try{if(window.AndroidBridge?.pinSeizureShortcut){const ok=AndroidBridge.pinSeizureShortcut();toast(ok?'Home-screen shortcut request opened':'This launcher does not support pinned shortcuts');return}}catch(e){}openSeizureShortcutInstaller()};
 document.getElementById('homeAddSeizureShortcut')?.addEventListener('click',openSeizureShortcutInstaller);function openExternal(url){try{if(window.AndroidBridge?.openExternalUrl){AndroidBridge.openExternalUrl(url);return}}catch(e){}if(url.startsWith('mailto:'))location.href=url;else window.open(url,'_blank')}document.getElementById('supportBtn').onclick=()=>openExternal(PAYPAL_URL);document.getElementById('legalSupportBtn').onclick=()=>openExternal(PAYPAL_URL);document.getElementById('contactBtn').onclick=()=>openExternal('mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent('Untold Seizure Log'));document.getElementById('legalContactBtn').onclick=()=>openExternal('mailto:'+CONTACT_EMAIL+'?subject='+encodeURIComponent('Untold Seizure Log'));
 
@@ -233,8 +237,9 @@ function renderReminderStatus(){
   <div class="button-row" style="justify-content:flex-start">
     ${permission!=='granted'?'<button class="secondary" id="enableWebNotifications">Enable notifications</button>':''}
     <button class="secondary" id="testWebNotification" ${permission!=='granted'?'disabled':''}>Test notification</button>
+    <button class="secondary" id="testStandbyPush" ${permission!=='granted'?'disabled':''}>Test with phone locked (10 sec)</button>
   </div>
-  <div class="meta" style="margin-top:8px">The test above is an immediate notification. Medication and appointment reminders while the phone is asleep or the app is fully closed need the Web Push reminder service, which is not active yet.</div>`;
+  <div class="meta" style="margin-top:8px">“Test notification” is immediate. “Test with phone locked” uses a real one-off Web Push from Vercel after about 10 seconds, so you can lock the phone straight after pressing it. This is a diagnostic test; scheduled medication/appointment push storage is the next step.</div>`;
   document.getElementById('enableWebNotifications')?.addEventListener('click',async()=>{
     try{
       const p=await Notification.requestPermission();
@@ -249,6 +254,30 @@ function renderReminderStatus(){
       toast('Test notification sent');
     }catch(e){toast('Could not send the test notification')}
   });
+  document.getElementById('testStandbyPush')?.addEventListener('click',async()=>{
+    const btn=document.getElementById('testStandbyPush');
+    try{
+      btn.disabled=true; btn.textContent='Preparing push…';
+      const reg=await navigator.serviceWorker.ready;
+      const keys=await fetch('/api/push-test-key',{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Could not prepare push test');return r.json()});
+      const oldSub=await reg.pushManager.getSubscription();
+      if(oldSub) await oldSub.unsubscribe().catch(()=>{});
+      const b64=s=>{s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return Uint8Array.from(atob(s),c=>c.charCodeAt(0))};
+      const sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64(keys.publicKey)});
+      btn.textContent='Lock phone now…';
+      toast('Lock the phone now. A real Web Push will be sent in about 10 seconds.');
+      fetch('/api/push-test',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({subscription:sub.toJSON(),publicKey:keys.publicKey,privateKey:keys.privateKey,delayMs:10000}),
+        keepalive:true
+      }).catch(()=>{});
+      setTimeout(()=>{btn.disabled=false;btn.textContent='Test with phone locked (10 sec)'},15000);
+    }catch(e){
+      btn.disabled=false;btn.textContent='Test with phone locked (10 sec)';
+      toast(e?.message||'Could not start standby push test');
+    }
+  });
 }
 function drainNativeActions(){try{if(!window.AndroidBridge?.drainMedicationActions)return;const actions=JSON.parse(AndroidBridge.drainMedicationActions()||'[]');let changed=false;for(const a of actions){if(state.medLog.some(x=>x.nativeActionId===a.actionId))continue;const med=state.medications.find(m=>m.id===a.medId),dose=med?.doses?.find(d=>d.id===a.doseId);state.medLog.push({id:id(),nativeActionId:a.actionId,medId:a.medId,doseId:a.doseId,name:a.name||((med?.name||'Medication')+' '+(med?.strength||'')),dose:a.amount||dose?.amount||'',status:a.status,scheduledTime:a.scheduledTime||dose?.time||'',scheduledDate:a.scheduledDate||nowParts(new Date(a.at||Date.now())).date,at:Number(a.at)||Date.now(),loggedBy:'Phone reminder',source:'native'});changed=true}if(changed){localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll()}}catch(e){}}
 window.UntoldNative={refresh(){drainNativeActions();renderReminderStatus()}};window.UntoldApp={getState(){return clone(state)},replaceState(data){state=migrate(data);localStorage.setItem(DB_KEY,JSON.stringify(state));renderAll();syncNativeSchedules();try{window.dispatchEvent(new CustomEvent('untold:state-saved'))}catch(e){}},getVersion(){return state.version}};document.addEventListener('visibilitychange',()=>{if(!document.hidden)window.UntoldNative.refresh()});
@@ -257,19 +286,12 @@ function setupLegalConsent(){const d=document.getElementById('legalConsentDialog
 function renderAll(){renderHome();renderEvents();renderJournal();renderMedications();renderAppointments();renderCare();renderSettings();renderTrash();renderReminderStatus();defaultReportDates()}
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.editEvent)openEvent(b.dataset.editEvent);if(b.dataset.deleteEvent)deleteEvent(b.dataset.deleteEvent);if(b.dataset.editJournal)openJournal(b.dataset.editJournal);if(b.dataset.deleteJournal)deleteJournal(b.dataset.deleteJournal);if(b.dataset.editMed)openMed(b.dataset.editMed);if(b.dataset.deleteMed)deleteMed(b.dataset.deleteMed);if(b.dataset.takeMed)takeMedication(b.dataset.takeMed,b.dataset.doseId);if(b.dataset.editAppt)openAppointment(b.dataset.editAppt);if(b.dataset.deleteAppt)deleteAppointment(b.dataset.deleteAppt);if(b.dataset.restore)restoreTrash(b.dataset.restore);if(b.dataset.purge)purgeTrash(b.dataset.purge)});
 renderAll();drainNativeActions();syncNativeSchedules();setupLegalConsent();
-const launchParams=new URLSearchParams(location.search);const action=launchParams.get('action');
-if(action){
-  // Consume launch actions exactly once, then remove them from the visible/app launch URL.
-  // This prevents a previous shortcut launch from logging again when the normal app icon is reopened.
-  try{history.replaceState(null,'',location.pathname)}catch(e){}
-}
-if(action==='seizure'){
-  const launchId=launchParams.get('launch')||('shortcut_'+Math.floor(Date.now()/60000));
-  if(sessionStorage.getItem('lastShortcutLaunch')!==launchId){
-    sessionStorage.setItem('lastShortcutLaunch',launchId);
-    quickEvent('seizure','Seizure');
-  }
-}else if(action==='medication')go('medication');
+const launchParams=new URLSearchParams(location.search);
+const action=launchParams.get('action');
+// The normal app NEVER logs a seizure from a URL. This prevents an installed-app
+// launch URL, restored browser tab or stale shortcut from creating false records.
+if(location.search){try{history.replaceState(null,'',location.pathname)}catch(e){}}
+if(action==='medication')go('medication');
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
 })();
 </script>
